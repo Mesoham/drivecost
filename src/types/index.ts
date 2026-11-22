@@ -159,6 +159,24 @@ export interface UserSettings {
     identifier?: string;
     displayName?: string;
   };
+  notificationPreferences?: {
+    channels: {
+      push: boolean;
+      email: boolean;
+    };
+    emailAddress?: string;
+    categories: {
+      dueReminders: {
+        enabled: boolean;
+        notify7Days: boolean;
+        notify3Days: boolean;
+        notify1Day: boolean;
+      };
+      generalReminders: {
+        enabled: boolean;
+      };
+    };
+  };
 }
 
 export type DocumentType = 
