@@ -19,7 +19,13 @@ import {
 } from 'lucide-react';
 
 import { auth } from '@/lib/firebase';
-import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
+import { 
+  RecaptchaVerifier, 
+  signInWithPhoneNumber, 
+  ConfirmationResult, 
+  GoogleAuthProvider, 
+  signInWithPopup 
+} from 'firebase/auth';
 
 declare global {
   interface Window {
@@ -41,43 +47,54 @@ export default function LoginPage() {
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [otpError, setOtpError] = useState('');
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
-
-  // Google Account Chooser Modal state
-  const [showGoogleChooser, setShowGoogleChooser] = useState(false);
-  const [customGoogleEmail, setCustomGoogleEmail] = useState('');
-  const [showCustomInput, setShowCustomInput] = useState(false);
-
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [showGoogleModal, setShowGoogleModal] = useState(false);
-  const [googleEmailInput, setGoogleEmailInput] = useState('');
 
-  // Immediate Clean Google Login Flow (No 401 Error)
-  const handleStartGoogleLogin = () => {
-    setShowGoogleModal(true);
-  };
-
-  const handleSelectGoogleAccount = async (email: string, name: string) => {
+  // Genuine Production Google Sign-In with device account chooser
+  const handleGoogleLogin = async () => {
     setIsSubmitting(true);
-    setShowGoogleModal(false);
+    setGoogleLoading(true);
 
-    // Save auth session & persistent tier
-    await updateUserSettings({
-      userAuth: {
-        isLoggedIn: true,
-        authMethod: 'google',
-        identifier: email,
-        displayName: name
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      await updateUserSettings({
+        userAuth: {
+          isLoggedIn: true,
+          authMethod: 'google',
+          identifier: user.email || 'user@gmail.com',
+          displayName: user.displayName || 'DriveCost User'
+        }
+      });
+
+      setDynamicAlert({
+        title: 'Signed in with Google! ✨',
+        subtitle: `Welcome back, ${user.displayName || user.email}`,
+        icon: 'check',
+        color: '#0071e3'
+      });
+
+      router.push('/dashboard');
+    } catch (err: any) {
+      console.error('Google Sign-In Error:', err);
+      // If user closed popup intentionally
+      if (err?.code !== 'auth/popup-closed-by-user') {
+        setDynamicAlert({
+          title: 'Google Sign-In Failed',
+          subtitle: err.message || 'Please try again.',
+          icon: 'check',
+          color: '#ff3b30'
+        });
       }
-    });
-
-    setDynamicAlert({
-      title: 'Signed in with Google! ✨',
-      subtitle: `Welcome, ${name} (${email})`,
-      icon: 'check',
-      color: '#0071e3'
-    });
-
-    router.push('/dashboard');
+    } finally {
+      setIsSubmitting(false);
+      setGoogleLoading(false);
+    }
   };
 
   // Real Cellular SMS OTP Dispatcher via Firebase Phone Authentication
@@ -203,29 +220,33 @@ export default function LoginPage() {
           {/* OPTION 1: Direct Google Login Button */}
           <button
             type="button"
-            onClick={handleStartGoogleLogin}
-            disabled={isSubmitting}
+            onClick={handleGoogleLogin}
+            disabled={isSubmitting || googleLoading}
             className="w-full py-3.5 px-4 rounded-2xl apple-glass border border-black/10 dark:border-white/15 daylight-text-main font-bold text-sm flex items-center justify-center gap-3 hover:scale-[1.01] active:scale-[0.98] transition-all shadow-xs mb-6 cursor-pointer group"
           >
-            <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24">
-              <path
-                fill="#4285F4"
-                d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.14z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.27 21.36 7.35 24 12 24z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
-              />
-              <path
-                fill="#EA4335"
-                d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.27 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-              />
-            </svg>
-            <span>Login with Google</span>
+            {googleLoading ? (
+              <RefreshCw className="h-5 w-5 animate-spin text-blue-500" />
+            ) : (
+              <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.14z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.27 21.36 7.35 24 12 24z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.27 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                />
+              </svg>
+            )}
+            <span>{googleLoading ? 'Opening Google Accounts...' : 'Login with Google'}</span>
           </button>
 
           {/* Minimalist Divider */}
@@ -341,116 +362,6 @@ export default function LoginPage() {
           <span>Local-first vault • 100% encrypted & private to this device</span>
         </div>
       </div>
-
-      {/* ========================================================================= */}
-      {/* CLEAN GOOGLE LOGIN CHOOSER (Bypasses 401 error)                           */}
-      {/* ========================================================================= */}
-      <AnimatePresence>
-        {showGoogleModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl border border-black/10 dark:border-white/15 relative text-left"
-            >
-              {/* Close Button */}
-              <button
-                type="button"
-                onClick={() => setShowGoogleModal(false)}
-                className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 daylight-text-muted cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
-
-              {/* Google Header */}
-              <div className="flex items-center gap-2.5 mb-2">
-                <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.14z"/>
-                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.27 21.36 7.35 24 12 24z"/>
-                  <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.27 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-                </svg>
-                <h3 className="text-sm font-bold daylight-text-main">Sign in with Google</h3>
-              </div>
-              <p className="text-xs daylight-text-muted mb-4">
-                to continue to <strong>DriveCost</strong>
-              </p>
-
-              {/* Fast 1-Click Common Profiles */}
-              <div className="space-y-2 mb-4">
-                <button
-                  type="button"
-                  onClick={() => handleSelectGoogleAccount('personal.drive@gmail.com', 'Alex Kumar')}
-                  className="w-full p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-slate-200 dark:border-slate-800 flex items-center gap-3 text-left transition-colors cursor-pointer group"
-                >
-                  <div className="h-9 w-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs shadow-xs">
-                    A
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-bold daylight-text-main group-hover:text-blue-600 transition-colors">
-                      Alex Kumar
-                    </div>
-                    <div className="text-[11px] daylight-text-muted">
-                      personal.drive@gmail.com
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleSelectGoogleAccount('fleetops.pro@company.in', 'Fleet Manager')}
-                  className="w-full p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-slate-200 dark:border-slate-800 flex items-center gap-3 text-left transition-colors cursor-pointer group"
-                >
-                  <div className="h-9 w-9 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-xs shadow-xs">
-                    F
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-bold daylight-text-main group-hover:text-blue-600 transition-colors">
-                      Fleet Manager
-                    </div>
-                    <div className="text-[11px] daylight-text-muted">
-                      fleetops.pro@company.in
-                    </div>
-                  </div>
-                </button>
-              </div>
-
-              {/* Enter Any Google Email */}
-              <form 
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!googleEmailInput.trim()) return;
-                  const prefix = googleEmailInput.split('@')[0];
-                  const name = prefix.charAt(0).toUpperCase() + prefix.slice(1);
-                  handleSelectGoogleAccount(googleEmailInput.trim(), name);
-                }}
-                className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2.5"
-              >
-                <div>
-                  <label className="block text-[11px] font-bold daylight-text-muted mb-1">
-                    Or enter any Google Email
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="yourname@gmail.com"
-                    value={googleEmailInput}
-                    onChange={(e) => setGoogleEmailInput(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs font-semibold daylight-text-main focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full py-2.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-sm cursor-pointer"
-                >
-                  Continue with this Google Account
-                </Button>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

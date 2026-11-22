@@ -19,7 +19,8 @@ import {
   Copy,
   Mail,
   ExternalLink,
-  Check
+  Check,
+  Download
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/app-store';
@@ -50,6 +51,7 @@ export function Navigation() {
 
   const secondaryLinks = [
     { label: 'Settings', href: '/settings', icon: Settings },
+    { label: 'Download the app', href: '/drivecost.apk', icon: Download, download: true },
     { label: 'FAQ', href: '/faq', icon: HelpCircle },
     { label: 'Privacy & Security', href: '/privacy', icon: ShieldCheck }
   ];
@@ -148,13 +150,14 @@ export function Navigation() {
 
             {/* Secondary Links (Settings, FAQ, Privacy & Security) with Liquid Glass Glider */}
             <div className="space-y-1 relative">
-              {secondaryLinks.map((item) => {
+              {secondaryLinks.map((item: any) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
+                    {...(item.download ? { download: 'DriveCost.apk', target: '_blank' } : {})}
                     className={cn(
                       'flex items-center gap-3 rounded-2xl px-3.5 py-2 text-xs font-semibold relative select-none transition-colors duration-200',
                       isActive ? 'daylight-text-main' : 'daylight-text-muted hover:daylight-text-main'
