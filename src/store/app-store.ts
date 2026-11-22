@@ -1,0 +1,397 @@
+import { create } from 'zustand';
+import type { Vehicle, Expense, Reminder, UserSettings, VehicleDocument } from '@/types';
+import { db, getSettings, updateSettings } from '@/lib/db';
+import { loadDemoDataIntoDB } from '@/lib/demo-data';
+
+interface DynamicAlertPayload {
+  title: string;
+  subtitle: string;
+  icon?: 'car' | 'pro' | 'check';
+  color?: string;
+}
+
+interface AppState {
+  vehicles: Vehicle[];
+  expenses: Expense[];
+  reminders: Reminder[];
+  documents: VehicleDocument[];
+  selectedVehicleId: string | 'all';
+  settings: UserSettings | null;
+  isLoading: boolean;
+  isInitialized: boolean;
+
+  // Monetization & Visual Modals
+  isProModalOpen: boolean;
+  setProModalOpen: (open: boolean) => void;
+  dynamicAlert: DynamicAlertPayload | null;
+  setDynamicAlert: (alert: DynamicAlertPayload | null) => void;
+
+  // Actions
+  initialize: () => Promise<void>;
+  setSelectedVehicleId: (id: string | 'all') => void;
+  loadDemoData: () => Promise<void>;
+  clearAllData: () => Promise<void>;
+
+  // Vehicle Actions
+  addVehicle: (vehicle: Omit<Vehicle, 'id' | 'createdAt' | 'updatedAt'>) => Promise<string>;
+  updateVehicle: (id: string, updates: Partial<Vehicle>) => Promise<void>;
+  deleteVehicle: (id: string) => Promise<void>;
+  archiveVehicle: (id: string, archive: boolean) => Promise<void>;
+
+  // Expense Actions
+  addExpense: (expense: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>) => Promise<string>;
+  updateExpense: (id: string, updates: Partial<Expense>) => Promise<void>;
+  deleteExpense: (id: string) => Promise<void>;
+
+  // Reminder Actions
+  addReminder: (reminder: Omit<Reminder, 'id' | 'createdAt' | 'updatedAt' | 'status'>) => Promise<string>;
+  updateReminder: (id: string, updates: Partial<Reminder>) => Promise<void>;
+  toggleReminderComplete: (id: string) => Promise<void>;
+  deleteReminder: (id: string) => Promise<void>;
+
+  // Document Actions
+  addDocument: (doc: Omit<VehicleDocument, 'id' | 'createdAt' | 'updatedAt'>) => Promise<string>;
+  deleteDocument: (id: string) => Promise<void>;
+  importFromDigiLocker: (vehicleId: string) => Promise<void>;
+
+  // Settings Actions
+  updateUserSettings: (updates: Partial<UserSettings>) => Promise<void>;
+}
+
+export const useAppStore = create<AppState>((set, get) => ({
+  vehicles: [],
+  expenses: [],
+  reminders: [],
+  documents: [],
+  selectedVehicleId: 'all',
+  settings: null,
+  isLoading: true,
+  isInitialized: false,
+  isProModalOpen: false,
+  dynamicAlert: null,
+
+  setProModalOpen: (open) => set({ isProModalOpen: open }),
+  setDynamicAlert: (alert) => {
+    set({ dynamicAlert: alert });
+    if (alert) {
+      setTimeout(() => {
+        set({ dynamicAlert: null });
+      }, 4000);
+    }
+  },
+
+  initialize: async () => {
+    try {
+      set({ isLoading: true });
+      const [vehicles, expenses, reminders, documents, settings] = await Promise.all([
+        db.vehicles.toArray(),
+        db.expenses.toArray(),
+        db.reminders.toArray(),
+        db.documents.toArray(),
+        getSettings()
+      ]);
+
+      const activeVeh = vehicles.find(v => !v.archived);
+
+      set({
+        vehicles: vehicles.filter(v => !v.archived),
+        expenses: expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+        reminders: reminders.sort((a, b) => {
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        }),
+        documents: documents.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+        settings: {
+          ...settings,
+          activeVehicleColor: activeVeh?.color || settings.activeVehicleColor || '#0071e3'
+        },
+        isLoading: false,
+        isInitialized: true
+      });
+    } catch (err) {
+      console.error('Failed to initialize local database:', err);
+      set({ isLoading: false, isInitialized: true });
+    }
+  },
+
+  setSelectedVehicleId: (id) => {
+    set({ selectedVehicleId: id });
+    if (id !== 'all') {
+      const veh = get().vehicles.find(v => v.id === id);
+      if (veh?.color) {
+        get().updateUserSettings({ activeVehicleColor: veh.color });
+        get().setDynamicAlert({
+          title: `${veh.name} Connected`,
+          subtitle: `Ambient atmosphere adapted to vehicle color`,
+          icon: 'car',
+          color: veh.color
+        });
+      }
+    }
+  },
+
+  loadDemoData: async () => {
+    set({ isLoading: true });
+    await loadDemoDataIntoDB(db);
+    const updatedSettings = await updateSettings({ hasCompletedOnboarding: true });
+    await get().initialize();
+    set({ settings: updatedSettings });
+  },
+
+  clearAllData: async () => {
+    set({ isLoading: true });
+    await db.vehicles.clear();
+    await db.expenses.clear();
+    await db.reminders.clear();
+    await db.odometerLogs.clear();
+    const settings = await updateSettings({ hasCompletedOnboarding: false });
+    set({
+      vehicles: [],
+      expenses: [],
+      reminders: [],
+      selectedVehicleId: 'all',
+      settings,
+      isLoading: false
+    });
+  },
+
+  addVehicle: async (vehicleData) => {
+    const id = `veh-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const now = new Date().toISOString();
+    const vehicle: Vehicle = {
+      ...vehicleData,
+      id,
+      archived: false,
+      createdAt: now,
+      updatedAt: now
+    };
+    await db.vehicles.add(vehicle);
+
+    if (vehicle.color) {
+      await get().updateUserSettings({ activeVehicleColor: vehicle.color });
+      get().setDynamicAlert({
+        title: `Surprise! Atmosphere Matched 🎨`,
+        subtitle: `Theme tuned to ${vehicle.name}'s custom color`,
+        icon: 'car',
+        color: vehicle.color
+      });
+    }
+
+    set(state => ({
+      vehicles: [...state.vehicles, vehicle],
+      selectedVehicleId: vehicle.id
+    }));
+    return id;
+  },
+
+  updateVehicle: async (id, updates) => {
+    const now = new Date().toISOString();
+    await db.vehicles.update(id, { ...updates, updatedAt: now });
+    if (updates.color) {
+      await get().updateUserSettings({ activeVehicleColor: updates.color });
+    }
+    set(state => ({
+      vehicles: state.vehicles.map(v => (v.id === id ? { ...v, ...updates, updatedAt: now } : v))
+    }));
+  },
+
+  deleteVehicle: async (id) => {
+    await db.vehicles.delete(id);
+    await db.expenses.where('vehicleId').equals(id).delete();
+    await db.reminders.where('vehicleId').equals(id).delete();
+    await db.odometerLogs.where('vehicleId').equals(id).delete();
+    set(state => ({
+      vehicles: state.vehicles.filter(v => v.id !== id),
+      expenses: state.expenses.filter(e => e.vehicleId !== id),
+      reminders: state.reminders.filter(r => r.vehicleId !== id),
+      selectedVehicleId: state.selectedVehicleId === id ? 'all' : state.selectedVehicleId
+    }));
+  },
+
+  archiveVehicle: async (id, archive) => {
+    await db.vehicles.update(id, { archived: archive, updatedAt: new Date().toISOString() });
+    set(state => ({
+      vehicles: archive ? state.vehicles.filter(v => v.id !== id) : state.vehicles,
+      selectedVehicleId: state.selectedVehicleId === id ? 'all' : state.selectedVehicleId
+    }));
+  },
+
+  addExpense: async (expenseData) => {
+    const id = `exp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const now = new Date().toISOString();
+    const expense: Expense = {
+      ...expenseData,
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
+    await db.expenses.add(expense);
+
+    if (typeof expense.odometer === 'number' && expense.odometer > 0) {
+      const vehicle = get().vehicles.find(v => v.id === expense.vehicleId);
+      if (vehicle && (!vehicle.currentOdometer || expense.odometer > vehicle.currentOdometer)) {
+        await get().updateVehicle(vehicle.id, { currentOdometer: expense.odometer });
+      }
+    }
+
+    set(state => ({
+      expenses: [expense, ...state.expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    }));
+    return id;
+  },
+
+  updateExpense: async (id, updates) => {
+    const now = new Date().toISOString();
+    await db.expenses.update(id, { ...updates, updatedAt: now });
+    set(state => ({
+      expenses: state.expenses.map(e => (e.id === id ? { ...e, ...updates, updatedAt: now } : e))
+    }));
+  },
+
+  deleteExpense: async (id) => {
+    await db.expenses.delete(id);
+    set(state => ({
+      expenses: state.expenses.filter(e => e.id !== id)
+    }));
+  },
+
+  addReminder: async (reminderData) => {
+    const id = `rem-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const now = new Date().toISOString();
+    const reminder: Reminder = {
+      ...reminderData,
+      id,
+      status: 'upcoming',
+      createdAt: now,
+      updatedAt: now
+    };
+    await db.reminders.add(reminder);
+    set(state => ({
+      reminders: [...state.reminders, reminder]
+    }));
+    return id;
+  },
+
+  updateReminder: async (id, updates) => {
+    const now = new Date().toISOString();
+    await db.reminders.update(id, { ...updates, updatedAt: now });
+    set(state => ({
+      reminders: state.reminders.map(r => (r.id === id ? { ...r, ...updates, updatedAt: now } : r))
+    }));
+  },
+
+  toggleReminderComplete: async (id) => {
+    const target = get().reminders.find(r => r.id === id);
+    if (!target) return;
+    const isCompleted = target.status === 'completed';
+    const nextStatus = isCompleted ? 'upcoming' : 'completed';
+    const completedAt = isCompleted ? undefined : new Date().toISOString();
+    await get().updateReminder(id, { status: nextStatus, completedAt });
+  },
+
+  deleteReminder: async (id) => {
+    await db.reminders.delete(id);
+    set(state => ({
+      reminders: state.reminders.filter(r => r.id !== id)
+    }));
+  },
+
+  addDocument: async (docData) => {
+    const id = `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const now = new Date().toISOString();
+    const document: VehicleDocument = {
+      ...docData,
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
+    await db.documents.add(document);
+    set(state => ({
+      documents: [document, ...state.documents]
+    }));
+    return id;
+  },
+
+  deleteDocument: async (id) => {
+    await db.documents.delete(id);
+    set(state => ({
+      documents: state.documents.filter(d => d.id !== id)
+    }));
+  },
+
+  importFromDigiLocker: async (vehicleId) => {
+    const veh = get().vehicles.find(v => v.id === vehicleId);
+    if (!veh) return;
+
+    const now = new Date().toISOString();
+    const demoDocs: Omit<VehicleDocument, 'id'>[] = [
+      {
+        vehicleId,
+        title: `${veh.name} - Official RC`,
+        type: 'Registration Certificate (RC)',
+        fileName: `${veh.registrationNumber || 'VEHICLE'}_RC_DigiLocker.pdf`,
+        fileType: 'pdf',
+        fileData: 'data:application/pdf;base64,JVBERi0xLjQKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwgL0xlbmd0aCA1IDAgUiAvRmlsdGVyIC9GbGF0ZURlY29kZSA+PgpzdHJlYW0KeAErVAhUKC4pysxLV8hJTU7NyweKGBkaGpsYmptYGAIAJdMJnQplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKMzIKZW5kb2JqCg==',
+        fileSize: 425600,
+        documentNumber: veh.registrationNumber || 'DL01AB1234',
+        isDigiLockerVerified: true,
+        notes: 'Digitally verified & pulled from Ministry of Road Transport and Highways (MoRTH) via DigiLocker API.',
+        createdAt: now,
+        updatedAt: now
+      },
+      {
+        vehicleId,
+        title: `${veh.name} - Comprehensive Insurance`,
+        type: 'Insurance Policy',
+        fileName: `${veh.name.replace(/\s+/g, '_')}_Insurance_DigiLocker.pdf`,
+        fileType: 'pdf',
+        fileData: 'data:application/pdf;base64,JVBERi0xLjQKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwgL0xlbmd0aCA1IDAgUiAvRmlsdGVyIC9GbGF0ZURlY29kZSA+PgpzdHJlYW0KeAErVAhUKC4pysxLV8hJTU7NyweKGBkaGpsYmptYGAIAJdMJnQplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKMzIKZW5kb2JqCg==',
+        fileSize: 312400,
+        documentNumber: 'POL-984321-IN',
+        expiryDate: veh.insuranceExpiryDate || new Date(Date.now() + 180 * 86400000).toISOString().slice(0, 10),
+        isDigiLockerVerified: true,
+        notes: 'Digitally verified with General Insurance Council via DigiLocker.',
+        createdAt: now,
+        updatedAt: now
+      },
+      {
+        vehicleId,
+        title: `${veh.name} - PUC Certificate`,
+        type: 'PUC Certificate',
+        fileName: `${veh.name.replace(/\s+/g, '_')}_PUC_DigiLocker.pdf`,
+        fileType: 'pdf',
+        fileData: 'data:application/pdf;base64,JVBERi0xLjQKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwgL0xlbmd0aCA1IDAgUiAvRmlsdGVyIC9GbGF0ZURlY29kZSA+PgpzdHJlYW0KeAErVAhUKC4pysxLV8hJTU7NyweKGBkaGpsYmptYGAIAJdMJnQplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKMzIKZW5kb2JqCg==',
+        fileSize: 185000,
+        documentNumber: 'PUC-2026-90412',
+        expiryDate: veh.pucExpiryDate || new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10),
+        isDigiLockerVerified: true,
+        notes: 'Valid emission test compliance certificate issued by MoRTH authorised station.',
+        createdAt: now,
+        updatedAt: now
+      }
+    ];
+
+    for (const d of demoDocs) {
+      const id = `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      await db.documents.add({ ...d, id });
+    }
+
+    const allDocs = await db.documents.toArray();
+    set({
+      documents: allDocs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    });
+
+    get().setDynamicAlert({
+      title: 'DigiLocker Synced! 🇮🇳',
+      subtitle: `Successfully imported 3 verified documents for ${veh.name}`,
+      icon: 'check',
+      color: '#34c759'
+    });
+  },
+
+  updateUserSettings: async (updates) => {
+    const nextSettings = await updateSettings(updates);
+    set({ settings: nextSettings });
+  }
+}));
