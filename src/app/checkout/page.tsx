@@ -243,7 +243,7 @@ export default function PricingPaymentPage() {
               </p>
 
               {/* User-Provided Exact QR Code Image */}
-              <div className="bg-white p-3 rounded-2xl mx-auto w-fit shadow-xl border-4 border-blue-500/30 mb-3 relative overflow-hidden">
+              <div className="bg-white p-3 rounded-2xl mx-auto w-fit shadow-xl border-4 border-blue-500/30 mb-2 relative overflow-hidden">
                 <div className="relative w-52 h-52 flex items-center justify-center bg-white rounded-xl overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -252,6 +252,33 @@ export default function PricingPaymentPage() {
                     className="w-full h-full object-contain rounded-lg"
                   />
                 </div>
+              </div>
+
+              {/* Instant UPI ID Bar for Direct Payment / Copy */}
+              <div className="flex items-center justify-between gap-2 bg-blue-500/15 border border-blue-400/30 px-3 py-2 rounded-xl mb-3 max-w-xs mx-auto">
+                <div className="text-left min-w-0">
+                  <div className="text-[10px] text-blue-300 font-semibold uppercase tracking-wider">
+                    UPI ID (Pay Directly)
+                  </div>
+                  <div className="text-xs font-mono font-bold text-white select-all truncate">
+                    sohamchowdhury@upi
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText('sohamchowdhury@upi');
+                    setDynamicAlert({
+                      title: 'UPI ID Copied! 📋',
+                      subtitle: 'sohamchowdhury@upi copied to clipboard',
+                      icon: 'check',
+                      color: '#0071e3'
+                    });
+                  }}
+                  className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[11px] font-bold shrink-0 transition-colors cursor-pointer"
+                >
+                  Copy
+                </button>
               </div>
 
               {/* Supported UPI Apps Row */}

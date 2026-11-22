@@ -15,10 +15,14 @@ import {
   ShieldCheck, 
   Cloud, 
   Bell, 
-  AlertTriangle 
+  AlertTriangle,
+  LogOut,
+  User
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
+  const router = useRouter();
   const { 
     settings, 
     vehicles, 
@@ -26,8 +30,29 @@ export default function SettingsPage() {
     updateUserSettings, 
     loadDemoData, 
     clearAllData,
-    setProModalOpen 
+    setProModalOpen,
+    setDynamicAlert
   } = useAppStore();
+
+  const handleLogout = async () => {
+    await updateUserSettings({
+      userAuth: {
+        isLoggedIn: false,
+        authMethod: 'phone',
+        identifier: '',
+        displayName: ''
+      }
+    });
+
+    setDynamicAlert({
+      title: 'Logged Out Successfully',
+      subtitle: 'Your session has ended. Redirecting to login...',
+      icon: 'check',
+      color: '#0071e3'
+    });
+
+    router.push('/login');
+  };
 
   const [notificationMsg, setNotificationMsg] = useState('');
   const [typedConfirmation, setTypedConfirmation] = useState('');
@@ -137,7 +162,42 @@ export default function SettingsPage() {
         )}
       </div>
 
-      {/* Visual Atmosphere & Daylight/Darkside Preferences */}
+      {/* User Account & Logout Control */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5 text-blue-500" />
+            <span>Account & Session</span>
+          </CardTitle>
+          <CardDescription>Manage active login credentials and device session</CardDescription>
+        </CardHeader>
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
+            <div>
+              <div className="text-xs font-bold daylight-text-main flex items-center gap-2">
+                <span>{settings?.userAuth?.displayName || 'Active Driver'}</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 font-extrabold uppercase">
+                  {settings?.userAuth?.authMethod || 'Session Active'}
+                </span>
+              </div>
+              <div className="text-xs daylight-text-muted mt-0.5">
+                {settings?.userAuth?.identifier || 'Signed in to this device'}
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-500/10 border-red-500/30 gap-1.5 cursor-pointer shrink-0"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Log Out</span>
+            </Button>
+          </div>
+        </div>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle>Display & Theme Atmosphere</CardTitle>

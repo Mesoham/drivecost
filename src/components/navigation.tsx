@@ -13,7 +13,9 @@ import {
   ShieldCheck, 
   Sparkles,
   HelpCircle,
-  FolderOpen
+  FolderOpen,
+  UserCheck,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/app-store';
@@ -22,6 +24,7 @@ import { motion } from 'framer-motion';
 export function Navigation() {
   const pathname = usePathname();
   const { reminders, settings, setProModalOpen } = useAppStore();
+  const [showCreatorModal, setShowCreatorModal] = React.useState(false);
 
   const dueRemindersCount = reminders.filter(r => r.status === 'due_soon' || r.status === 'overdue').length;
 
@@ -174,7 +177,15 @@ export function Navigation() {
                     <span className="relative z-10">{item.label}</span>
                   </Link>
                 );
-              })}
+              {/* "Who made this thing ?" Button */}
+              <button
+                type="button"
+                onClick={() => setShowCreatorModal(true)}
+                className="w-full flex items-center gap-3 rounded-2xl px-3.5 py-2 text-xs font-semibold select-none transition-colors duration-200 daylight-text-muted hover:daylight-text-main hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-left"
+              >
+                <UserCheck className="h-4 w-4 text-purple-500 shrink-0" />
+                <span>Who made this thing ?</span>
+              </button>
             </div>
           </div>
         </div>
@@ -220,6 +231,54 @@ export function Navigation() {
           );
         })}
       </nav>
+      {/* Creator Profile Modal ("Who made this thing ?") */}
+      {showCreatorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+          <div className="apple-glass max-w-sm w-full p-6 relative rounded-3xl border border-purple-500/30 shadow-2xl text-center bg-slate-900/95 text-white">
+            <button
+              type="button"
+              onClick={() => setShowCreatorModal(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-white/10 text-slate-400 hover:text-white cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            {/* Creator Photo / Avatar */}
+            <div className="w-24 h-24 rounded-full mx-auto p-1 bg-gradient-to-tr from-purple-500 via-blue-500 to-indigo-500 shadow-xl mb-4 relative">
+              <div className="w-full h-full rounded-full overflow-hidden bg-slate-800 flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/creator.jpg"
+                  alt="Creator"
+                  onError={(e) => {
+                    // Fallback to stylized monogram if user hasn't uploaded custom photo yet
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement!.innerHTML = '<span class="text-3xl font-black text-white">SC</span>';
+                  }}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+
+            <div className="inline-block px-3 py-1 rounded-full text-[10px] font-black tracking-widest text-purple-400 bg-purple-500/15 border border-purple-500/30 uppercase mb-2">
+              Creator & Architect
+            </div>
+
+            <h3 className="text-xl font-black tracking-tight text-white mb-1">
+              Soham Chowdhury
+            </h3>
+
+            {/* Quirky Quote */}
+            <div className="my-4 p-3.5 rounded-2xl bg-white/5 border border-white/10 text-amber-300 dark:text-amber-200 text-xs italic font-medium leading-relaxed">
+              &quot;I built this because spreadsheets made me cry, and my 400cc engine deserves better fuel than my own body runs on.&quot;
+            </div>
+
+            <p className="text-[11px] text-slate-400">
+              Crafted with high-precision engineering for vehicle owners across India.
+            </p>
+          </div>
+        </div>
+      )}
     </>
   );
 }
