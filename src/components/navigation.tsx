@@ -15,7 +15,11 @@ import {
   HelpCircle,
   FolderOpen,
   UserCheck,
-  X
+  X,
+  Copy,
+  Mail,
+  ExternalLink,
+  Check
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/app-store';
@@ -23,8 +27,10 @@ import { motion } from 'framer-motion';
 
 export function Navigation() {
   const pathname = usePathname();
-  const { reminders, settings, setProModalOpen } = useAppStore();
+  const { reminders, settings, setProModalOpen, setDynamicAlert } = useAppStore();
   const [showCreatorModal, setShowCreatorModal] = React.useState(false);
+  const [showEmailOptions, setShowEmailOptions] = React.useState(false);
+  const [emailCopied, setEmailCopied] = React.useState(false);
 
   const dueRemindersCount = reminders.filter(r => r.status === 'due_soon' || r.status === 'overdue').length;
 
@@ -279,17 +285,90 @@ export function Navigation() {
               &quot;I built this because spreadsheets made me cry, and my 400cc engine deserves better fuel than my own body runs on.&quot;
             </div>
 
-            {/* Contact / Email CTA */}
-            <div className="pt-2 border-t border-white/10">
-              <p className="text-[11px] text-slate-400 mb-1.5 font-medium">
+            {/* Contact / Email CTA with Interactive Options & Spring Animations */}
+            <div className="pt-2 border-t border-white/10 relative">
+              <p className="text-[11px] text-slate-400 mb-2 font-medium">
                 Got thoughts, feedback or want to talk bikes? Hit me up at:
               </p>
-              <a
-                href="mailto:chowdhurysoham007@gmail.com"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300 hover:text-white hover:bg-purple-500/25 transition-all text-xs font-mono font-bold"
+
+              {/* Email Trigger Button with Hover/Tap Animations */}
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.96 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                onClick={() => setShowEmailOptions(!showEmailOptions)}
+                className="w-full inline-flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-purple-500/20 via-blue-500/15 to-indigo-500/20 border border-purple-500/30 text-purple-200 hover:text-white shadow-lg shadow-purple-500/10 cursor-pointer group"
               >
-                chowdhurysoham007@gmail.com
-              </a>
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="h-6 w-6 rounded-lg bg-purple-500/20 text-purple-300 flex items-center justify-center shrink-0">
+                    <Mail className="h-3.5 w-3.5" />
+                  </div>
+                  <span className="text-xs font-mono font-bold truncate">
+                    chowdhurysoham007@gmail.com
+                  </span>
+                </div>
+                <motion.span
+                  animate={{ rotate: showEmailOptions ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="text-[10px] text-purple-400 font-bold shrink-0 ml-1"
+                >
+                  ▼
+                </motion.span>
+              </motion.button>
+
+              {/* Animated Expandable Two-Option Panel */}
+              {showEmailOptions && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                  className="mt-2.5 grid grid-cols-2 gap-2"
+                >
+                  {/* Option 1: Copy Email */}
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 255, 255, 0.12)' }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      navigator.clipboard.writeText('chowdhurysoham007@gmail.com');
+                      setEmailCopied(true);
+                      setDynamicAlert({
+                        title: 'Email Address Copied! 📋',
+                        subtitle: 'chowdhurysoham007@gmail.com copied to clipboard',
+                        icon: 'check',
+                        color: '#a855f7'
+                      });
+                      setTimeout(() => setEmailCopied(false), 2500);
+                    }}
+                    className="p-2.5 rounded-xl bg-white/8 hover:bg-white/12 border border-white/10 flex items-center justify-center gap-1.5 text-xs font-bold text-white transition-all cursor-pointer shadow-xs"
+                  >
+                    {emailCopied ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-emerald-400" />
+                        <span className="text-emerald-400">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5 text-purple-400" />
+                        <span>Copy Email</span>
+                      </>
+                    )}
+                  </motion.button>
+
+                  {/* Option 2: Open Mailbox */}
+                  <motion.a
+                    href="mailto:chowdhurysoham007@gmail.com"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="p-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 border border-purple-400/30 flex items-center justify-center gap-1.5 text-xs font-bold text-white transition-all shadow-md shadow-purple-600/20 cursor-pointer"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    <span>Open Mailbox</span>
+                  </motion.a>
+                </motion.div>
+              )}
             </div>
           </div>
         </div>
