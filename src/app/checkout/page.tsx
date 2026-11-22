@@ -261,16 +261,16 @@ export default function PricingPaymentPage() {
                     UPI ID (Pay Directly)
                   </div>
                   <div className="text-xs font-mono font-bold text-white select-all truncate">
-                    sohamchowdhury@upi
+                    mesoham007@upi
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => {
-                    navigator.clipboard.writeText('sohamchowdhury@upi');
+                    navigator.clipboard.writeText('mesoham007@upi');
                     setDynamicAlert({
                       title: 'UPI ID Copied! 📋',
-                      subtitle: 'sohamchowdhury@upi copied to clipboard',
+                      subtitle: 'mesoham007@upi copied to clipboard',
                       icon: 'check',
                       color: '#0071e3'
                     });

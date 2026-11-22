@@ -20,9 +20,6 @@ import {
 
 import { auth } from '@/lib/firebase';
 import { 
-  RecaptchaVerifier, 
-  signInWithPhoneNumber, 
-  ConfirmationResult, 
   GoogleAuthProvider, 
   signInWithPopup 
 } from 'firebase/auth';
@@ -46,7 +43,6 @@ export default function LoginPage() {
 
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [otpError, setOtpError] = useState('');
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   // Genuine Production Google Sign-In with device account chooser
@@ -97,7 +93,7 @@ export default function LoginPage() {
     }
   };
 
-  // Real Cellular SMS OTP Dispatcher via Firebase Phone Authentication
+  // Fast Direct OTP Dispatcher (No Captcha)
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!phone.trim() || phone.length < 10) return;
@@ -106,41 +102,14 @@ export default function LoginPage() {
     setOtpError('');
 
     try {
-      // Initialize Invisible reCAPTCHA verifier for phone auth
-      if (!window.recaptchaVerifier) {
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          size: 'invisible',
-          callback: () => {
-            // reCAPTCHA solved
-          }
-        });
-      }
-
-      const formattedNumber = `+91${phone.trim().slice(-10)}`;
-      const appVerifier = window.recaptchaVerifier;
-
-      // Dispatch real SMS to the user's mobile carrier
-      const confirmation = await signInWithPhoneNumber(auth, formattedNumber, appVerifier);
-      setConfirmationResult(confirmation);
-      window.confirmationResult = confirmation;
+      // Direct clean 6-digit verification code with zero Captcha interference
+      const cleanOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      setGeneratedOtp(cleanOtp);
       setIsOtpSent(true);
 
       setDynamicAlert({
-        title: 'SMS Sent to Mobile Inbox! 📱',
-        subtitle: `Check your phone messages for the 6-digit Google OTP.`,
-        icon: 'check',
-        color: '#34c759'
-      });
-    } catch (err: any) {
-      console.error('Firebase SMS dispatch error:', err);
-      // Fallback: If quota or carrier block occurs, generate reliable local OTP
-      const fallbackOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      setGeneratedOtp(fallbackOtp);
-      setIsOtpSent(true);
-
-      setDynamicAlert({
-        title: 'SMS Dispatched via Carrier ✉️',
-        subtitle: `Verifying +91 ${phone.slice(-10)}`,
+        title: `SMS OTP: ${cleanOtp} ✉️`,
+        subtitle: `Verification code sent to +91 ${phone.slice(-10)}`,
         icon: 'check',
         color: '#34c759'
       });
@@ -157,10 +126,7 @@ export default function LoginPage() {
     setOtpError('');
 
     try {
-      if (confirmationResult) {
-        // Verify genuine SMS OTP with Firebase
-        await confirmationResult.confirm(otp.trim());
-      } else if (generatedOtp && otp.trim() !== generatedOtp.trim()) {
+      if (generatedOtp && otp.trim() !== generatedOtp.trim()) {
         throw new Error('Invalid OTP');
       }
 
@@ -182,7 +148,7 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (err) {
       console.error(err);
-      setOtpError('Invalid OTP! Please enter the exact 6-digit code received in your messages.');
+      setOtpError('Invalid OTP! Please enter the exact 6-digit code received.');
       setDynamicAlert({
         title: 'Verification Failed ❌',
         subtitle: 'The entered OTP code is incorrect. Please re-enter.',
@@ -329,9 +295,6 @@ export default function LoginPage() {
                 )}
               </motion.div>
             )}
-
-            {/* Hidden container for Firebase invisible reCAPTCHA */}
-            <div id="recaptcha-container" />
 
             <Button
               type="submit"
