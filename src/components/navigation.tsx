@@ -262,8 +262,12 @@ export function Navigation() {
               </div>
             </div>
 
-            <div className="inline-block px-3 py-1 rounded-full text-[10px] font-black tracking-widest text-purple-400 bg-purple-500/15 border border-purple-500/30 uppercase mb-2">
-              Creator & Architect
+            <div className="inline-block px-3.5 py-1 rounded-full text-[11px] font-black tracking-wide text-purple-400 bg-purple-500/15 border border-purple-500/30 mb-2">
+              I made this thing
+            </div>
+
+            <div className="text-xs font-semibold text-slate-400 mb-0.5">
+              Hiii, Myself
             </div>
 
             <h3 className="text-xl font-black tracking-tight text-white mb-1">
@@ -274,10 +278,6 @@ export function Navigation() {
             <div className="my-4 p-3.5 rounded-2xl bg-white/5 border border-white/10 text-amber-300 dark:text-amber-200 text-xs italic font-medium leading-relaxed">
               &quot;I built this because spreadsheets made me cry, and my 400cc engine deserves better fuel than my own body runs on.&quot;
             </div>
-
-            <p className="text-[11px] text-slate-400">
-              Crafted with high-precision engineering for vehicle owners across India.
-            </p>
           </div>
         </div>
       )}
