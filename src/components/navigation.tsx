@@ -278,6 +278,19 @@ export function Navigation() {
             <div className="my-4 p-3.5 rounded-2xl bg-white/5 border border-white/10 text-amber-300 dark:text-amber-200 text-xs italic font-medium leading-relaxed">
               &quot;I built this because spreadsheets made me cry, and my 400cc engine deserves better fuel than my own body runs on.&quot;
             </div>
+
+            {/* Contact / Email CTA */}
+            <div className="pt-2 border-t border-white/10">
+              <p className="text-[11px] text-slate-400 mb-1.5 font-medium">
+                Got thoughts, feedback or want to talk bikes? Hit me up at:
+              </p>
+              <a
+                href="mailto:chowdhurysoham007@gmail.com"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300 hover:text-white hover:bg-purple-500/25 transition-all text-xs font-mono font-bold"
+              >
+                chowdhurysoham007@gmail.com
+              </a>
+            </div>
           </div>
         </div>
       )}
