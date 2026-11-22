@@ -177,6 +177,8 @@ export function Navigation() {
                     <span className="relative z-10">{item.label}</span>
                   </Link>
                 );
+              })}
+
               {/* "Who made this thing ?" Button */}
               <button
                 type="button"
