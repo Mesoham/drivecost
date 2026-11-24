@@ -2,13 +2,14 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, Sparkles, Shield, Zap, Percent } from 'lucide-react';
+import { X, Check, Sparkles, Shield, Zap, Percent, CreditCard, Lock } from 'lucide-react';
 import { useAppStore } from '@/store/app-store';
 import { Button } from '@/components/ui/button';
 import confetti from 'canvas-confetti';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export function ProUpgradeModal() {
+  const router = useRouter();
   const { isProModalOpen, setProModalOpen, updateUserSettings, setDynamicAlert, settings } = useAppStore();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
 
@@ -40,7 +41,7 @@ export function ProUpgradeModal() {
 
   const handleUpgrade = () => {
     setProModalOpen(false);
-    window.location.href = '/checkout';
+    router.push('/checkout');
   };
 
   return (
@@ -98,60 +99,63 @@ export function ProUpgradeModal() {
                 </div>
 
                 {!isOfferActivated ? (
-                  <div className="flex flex-col items-end gap-0.5">
-                    <Button
-                      type="button"
-                      onClick={handleActivateOffer}
-                      className="py-1.5 px-3 text-[11px] font-black bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-md rounded-xl cursor-pointer"
-                    >
-                      <Sparkles className="h-3 w-3 mr-1" />
-                      <span>Activate Pro mode</span>
-                    </Button>
-                    <span className="text-[10px] text-purple-300 font-medium">
-                      A surprise is waiting for you
-                    </span>
-                  </div>
+                  <button
+                    onClick={handleActivateOffer}
+                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-black text-xs shadow-md cursor-pointer shrink-0 transition-transform hover:scale-105 active:scale-95"
+                  >
+                    Activate Pro mode 🎁
+                  </button>
                 ) : (
-                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-1 rounded-xl">
-                    <Check className="h-3.5 w-3.5 stroke-[3]" />
-                    <span>25% Discount Applied</span>
+                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 text-xs font-black">
+                    <Percent className="h-3.5 w-3.5" />
+                    <span>25% OFF ACTIVE</span>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* Billing Cycle Switcher */}
-          <div className="p-1.5 rounded-2xl bg-white/10 flex items-center mb-6 relative">
+          {/* Billing selector tabs */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
             <button
               onClick={() => setBillingCycle('monthly')}
-              className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all relative cursor-pointer ${
-                billingCycle === 'monthly' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                billingCycle === 'monthly'
+                  ? 'border-blue-500 bg-blue-500/20 shadow-lg'
+                  : 'border-white/10 hover:border-white/20'
               }`}
             >
-              <span>Monthly</span>
-              <span className="block text-[10px] font-normal opacity-90">
-                ₹{monthlyPrice} / mo {isOfferActivated && <del className="opacity-60">₹99</del>}
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs font-bold">Monthly Plan</span>
+                {isOfferActivated && (
+                  <span className="text-[9px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full font-black">
+                    25% OFF
+                  </span>
+                )}
+              </div>
+              <span className="block text-lg font-black">
+                ₹{monthlyPrice} <span className="text-xs font-normal opacity-70">/ mo</span>{' '}
+                {isOfferActivated && <del className="text-xs text-slate-400 font-normal">₹99</del>}
               </span>
             </button>
 
             <button
               onClick={() => setBillingCycle('yearly')}
-              className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all relative cursor-pointer ${
-                billingCycle === 'yearly' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
+                billingCycle === 'yearly'
+                  ? 'border-blue-500 bg-blue-500/20 shadow-lg'
+                  : 'border-white/10 hover:border-white/20'
               }`}
             >
-              <div className="flex items-center justify-center gap-1">
-                <span>Annual</span>
-                {isOfferActivated && (
-                  <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-emerald-500 text-white font-extrabold uppercase">
-                    25% OFF
-                  </span>
-                )}
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs font-bold">Annual Plan</span>
+                <span className="text-[9px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full font-black">
+                  BEST VALUE
+                </span>
               </div>
-              <span className="block text-[10px] font-normal opacity-90">
-                ₹{yearlyPrice} / yr {isOfferActivated && <del className="opacity-60">₹999</del>}{' '}
-                (~₹{Math.round(yearlyPrice / 12)}/mo)
+              <span className="block text-lg font-black">
+                ₹{yearlyPrice} <span className="text-xs font-normal opacity-70">/ yr</span>{' '}
+                {isOfferActivated && <del className="text-xs text-slate-400 font-normal">₹999</del>}
               </span>
             </button>
           </div>
@@ -178,12 +182,14 @@ export function ProUpgradeModal() {
           <div className="space-y-3">
             <Button
               onClick={handleUpgrade}
-              className="w-full py-4 text-sm font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-xl shadow-blue-600/30 border border-white/20 cursor-pointer"
+              className="w-full py-4 text-sm font-extrabold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-indigo-500 shadow-xl shadow-blue-600/30 border border-white/20 cursor-pointer flex items-center justify-center gap-2"
             >
-              Continue to Secure Payment (₹{billingCycle === 'yearly' ? yearlyPrice : monthlyPrice})
+              <CreditCard className="h-4 w-4" />
+              <span>Proceed to Razorpay Checkout (₹{billingCycle === 'yearly' ? yearlyPrice : monthlyPrice})</span>
             </Button>
-            <div className="text-[11px] text-center text-slate-400">
-              Instant activation via official UPI QR Code verification.
+            <div className="text-[11px] text-center text-slate-400 flex items-center justify-center gap-1.5">
+              <Lock className="h-3 w-3 text-emerald-400" />
+              <span>Secure Razorpay Gateway • Paid mode activates only on verified payment.</span>
             </div>
           </div>
         </motion.div>
