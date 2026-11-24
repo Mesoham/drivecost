@@ -3,46 +3,18 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/app-store';
-import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Phone, 
-  ShieldCheck, 
-  ArrowRight, 
-  Check, 
-  X, 
-  User, 
-  Mail,
-  Smartphone,
-  RefreshCw,
-  Sparkles,
-  KeyRound
-} from 'lucide-react';
-
+import { ShieldCheck, RefreshCw, Sparkles, CheckCircle2 } from 'lucide-react';
 import { auth } from '@/lib/firebase';
-import { 
-  GoogleAuthProvider, 
-  signInWithPopup 
-} from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
 export default function LoginPage() {
   const router = useRouter();
   const { updateUserSettings, setDynamicAlert } = useAppStore();
-
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  const [isOtpSent, setIsOtpSent] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSendingSms, setIsSendingSms] = useState(false);
-
-  const [generatedOtp, setGeneratedOtp] = useState('');
-  const [otpError, setOtpError] = useState('');
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  // Genuine Production Google Sign-In with device account chooser
+  // 1-Click Clean Google Authentication via official on-device Google chooser
   const handleGoogleLogin = async () => {
-    setIsSubmitting(true);
     setGoogleLoading(true);
 
     try {
@@ -64,8 +36,8 @@ export default function LoginPage() {
       });
 
       setDynamicAlert({
-        title: 'Signed in with Google! ✨',
-        subtitle: `Welcome back, ${user.displayName || user.email}`,
+        title: 'Signed in successfully! ✨',
+        subtitle: `Welcome, ${user.displayName || user.email}`,
         icon: 'check',
         color: '#0071e3'
       });
@@ -82,76 +54,7 @@ export default function LoginPage() {
         });
       }
     } finally {
-      setIsSubmitting(false);
       setGoogleLoading(false);
-    }
-  };
-
-  // 100% Zero-Captcha Instant OTP Delivery System
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!phone.trim() || phone.length < 10) return;
-
-    setIsSendingSms(true);
-    setOtpError('');
-
-    try {
-      // Deterministic & resilient 6-digit verification code with zero Captcha barrier
-      const cleanOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      setGeneratedOtp(cleanOtp);
-      setIsOtpSent(true);
-
-      // Auto-fill OTP option or high-visibility on-screen SMS dispatch banner
-      setDynamicAlert({
-        title: `SMS OTP Dispatched: ${cleanOtp} 📱`,
-        subtitle: `Use code ${cleanOtp} to log in directly. Zero captcha needed!`,
-        icon: 'check',
-        color: '#34c759'
-      });
-    } finally {
-      setIsSendingSms(false);
-    }
-  };
-
-  const handlePhoneLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otp.trim() || otp.length < 6) return;
-
-    setIsSubmitting(true);
-    setOtpError('');
-
-    try {
-      if (generatedOtp && otp.trim() !== generatedOtp.trim()) {
-        throw new Error('Invalid OTP');
-      }
-
-      await updateUserSettings({
-        userAuth: {
-          isLoggedIn: true,
-          authMethod: 'phone',
-          identifier: `+91 ${phone.trim()}`,
-          displayName: `Driver ${phone.slice(-4)}`
-        }
-      });
-
-      setDynamicAlert({
-        title: 'Logged in successfully! 🚀',
-        subtitle: `Verified phone +91 ${phone.slice(-10)}`,
-        icon: 'check',
-        color: '#34c759'
-      });
-      router.push('/dashboard');
-    } catch (err) {
-      console.error(err);
-      setOtpError('Incorrect OTP code! Please use the 6-digit code shown in the alert or tap Auto-fill.');
-      setDynamicAlert({
-        title: 'Verification Failed ❌',
-        subtitle: 'The entered OTP code is incorrect. Please re-enter.',
-        icon: 'check',
-        color: '#ff3b30'
-      });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -163,7 +66,7 @@ export default function LoginPage() {
       </div>
 
       <div className="w-full max-w-md mx-auto space-y-6">
-        {/* Brand header with Daylight & Darkside matching logo */}
+        {/* Brand header */}
         <div className="text-center">
           <div className="h-16 w-16 rounded-3xl mx-auto flex items-center justify-center p-1.5 shadow-xl mb-4 transition-all duration-500 border border-white/20 shadow-blue-500/25 bg-slate-900 overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -177,14 +80,23 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Apple HIG Liquid Glass Sign-in Card */}
+        {/* Clean 1-Click Sign-in Card */}
         <div className="apple-glass p-6 sm:p-8 backdrop-blur-2xl">
-          {/* OPTION 1: Direct Google Login Button */}
+          <div className="text-center mb-6">
+            <h2 className="text-lg font-bold daylight-text-main mb-1">
+              Welcome to Your Garage
+            </h2>
+            <p className="text-xs daylight-text-muted">
+              Sign in with your Google account to sync all vehicles, fuel logs, and reminders securely.
+            </p>
+          </div>
+
+          {/* Primary 1-Click Google Sign-In Button */}
           <button
             type="button"
             onClick={handleGoogleLogin}
-            disabled={isSubmitting || googleLoading}
-            className="w-full py-3.5 px-4 rounded-2xl apple-glass border border-black/10 dark:border-white/15 daylight-text-main font-bold text-sm flex items-center justify-center gap-3 hover:scale-[1.01] active:scale-[0.98] transition-all shadow-xs mb-6 cursor-pointer group"
+            disabled={googleLoading}
+            className="w-full py-4 px-4 rounded-2xl apple-glass border border-black/10 dark:border-white/15 daylight-text-main font-bold text-sm flex items-center justify-center gap-3 hover:scale-[1.01] active:scale-[0.98] transition-all shadow-md cursor-pointer group bg-white/70 dark:bg-white/5 hover:bg-white/90 dark:hover:bg-white/10"
           >
             {googleLoading ? (
               <RefreshCw className="h-5 w-5 animate-spin text-blue-500" />
@@ -208,123 +120,24 @@ export default function LoginPage() {
                 />
               </svg>
             )}
-            <span>{googleLoading ? 'Opening Google Accounts...' : 'Login with Google'}</span>
+            <span>{googleLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
           </button>
 
-          {/* Minimalist Divider */}
-          <div className="relative flex items-center justify-center mb-6">
-            <div className="border-t border-black/10 dark:border-white/10 w-full" />
-            <span className="bg-white/80 dark:bg-black/80 px-3 text-[11px] uppercase tracking-wider daylight-text-tertiary font-bold absolute rounded-full">
-              or continue with phone
-            </span>
-          </div>
-
-          {/* OPTION 2: Phone Number + Zero-Captcha OTP */}
-          <form onSubmit={isOtpSent ? handlePhoneLogin : handleSendOtp} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider daylight-text-muted mb-1.5 flex items-center gap-1.5">
-                <Smartphone className="h-3.5 w-3.5 text-blue-500" />
-                <span>Mobile Number (India +91)</span>
-              </label>
-              <div className="relative flex items-center">
-                <span className="absolute left-3.5 text-xs font-bold daylight-text-muted">
-                  🇮🇳 +91
-                </span>
-                <input
-                  type="tel"
-                  required
-                  maxLength={10}
-                  placeholder="98765 43210"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                  className="w-full rounded-2xl apple-glass pl-18 pr-4 py-2.5 text-sm font-bold daylight-text-main focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-                />
-              </div>
+          {/* Value Props */}
+          <div className="mt-6 pt-6 border-t border-black/10 dark:border-white/10 space-y-2.5">
+            <div className="flex items-center gap-2 text-xs daylight-text-muted">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+              <span>Instant sync across all your phones and tablets</span>
             </div>
-
-            {isOtpSent && (
-              <motion.div
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-3"
-              >
-                {/* Instant Clean OTP Card (Zero Captcha Guarantee) */}
-                <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center">
-                  <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1 flex items-center justify-center gap-1.5">
-                    <Check className="h-3.5 w-3.5" />
-                    <span>OTP Dispatched • Zero Captcha</span>
-                  </div>
-                  <div className="text-xs text-slate-700 dark:text-slate-200 font-semibold mb-2">
-                    Your 6-digit OTP code is:
-                  </div>
-                  <div className="inline-flex items-center gap-2 bg-emerald-500/20 px-3.5 py-1.5 rounded-xl border border-emerald-500/40">
-                    <span className="font-mono text-lg font-black tracking-widest text-emerald-600 dark:text-emerald-400">
-                      {generatedOtp}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setOtp(generatedOtp)}
-                      className="px-2 py-0.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold cursor-pointer transition-colors"
-                    >
-                      Auto-fill
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-bold uppercase tracking-wider daylight-text-muted">
-                    Enter 6-Digit Code
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleSendOtp}
-                    disabled={isSendingSms}
-                    className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold hover:underline cursor-pointer"
-                  >
-                    {isSendingSms ? 'Resending...' : 'Resend Code'}
-                  </button>
-                </div>
-                <input
-                  type="text"
-                  required
-                  maxLength={6}
-                  placeholder="Enter 6-digit OTP"
-                  value={otp}
-                  onChange={(e) => {
-                    setOtp(e.target.value.replace(/\D/g, ''));
-                    setOtpError('');
-                  }}
-                  className="w-full rounded-2xl apple-glass px-4 py-2.5 text-base font-bold text-center tracking-widest daylight-text-main focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-                />
-                {otpError && (
-                  <p className="text-xs text-red-500 font-semibold mt-1">
-                    {otpError}
-                  </p>
-                )}
-              </motion.div>
-            )}
-
-            <Button
-              type="submit"
-              disabled={isSubmitting || isSendingSms || phone.length < 10}
-              className="w-full py-3.5 text-sm font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-2xl shadow-lg shadow-blue-500/25 cursor-pointer mt-2"
-            >
-              {isSubmitting ? (
-                <span>Signing In...</span>
-              ) : isSendingSms ? (
-                <span className="flex items-center justify-center gap-2">
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  Generating Code...
-                </span>
-              ) : isOtpSent ? (
-                <span className="flex items-center justify-center gap-1.5">
-                  Verify & Enter Garage <ArrowRight className="h-4 w-4" />
-                </span>
-              ) : (
-                <span>Get Instant Verification Code</span>
-              )}
-            </Button>
-          </form>
+            <div className="flex items-center gap-2 text-xs daylight-text-muted">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+              <span>Zero SMS codes, zero passwords, zero captchas</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs daylight-text-muted">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+              <span>100% private & client-side encrypted vault</span>
+            </div>
+          </div>
         </div>
 
         {/* Local privacy guarantee */}
