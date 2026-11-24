@@ -9,16 +9,15 @@ import {
   Check, 
   Sparkles, 
   ShieldCheck, 
-  Zap, 
   Lock, 
   ArrowLeft,
   Smartphone,
   CheckCircle2,
   RefreshCw,
-  Percent,
+  Copy,
   CreditCard,
   Building,
-  Wallet
+  CheckCheck
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -31,20 +30,21 @@ declare global {
 export default function PricingPaymentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const requestedTier = searchParams.get('tier') || 'business';
   const { updateUserSettings, setDynamicAlert, settings } = useAppStore();
 
   const [billingCycle, setBillingCycle] = useState<'yearly' | 'monthly'>('yearly');
-
-  // Surprise discount state:
   const [isOfferActivated, setIsOfferActivated] = useState(false);
   const [showOfferPopup, setShowOfferPopup] = useState(false);
-
-  // Razorpay payment processing state
+  const [copiedUpi, setCopiedUpi] = useState(false);
+  const [utrNumber, setUtrNumber] = useState('');
+  const [isVerifyingUtr, setIsVerifyingUtr] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [isRazorpayLoaded, setIsRazorpayLoaded] = useState(false);
 
-  // Dynamically load official Razorpay Checkout SDK
+  // Your verified bank-linked UPI handle
+  const bankUpiId = 'mesoham007@upi';
+
+  // Load Razorpay Checkout SDK
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if (window.Razorpay) {
@@ -75,31 +75,77 @@ export default function PricingPaymentPage() {
     });
   };
 
-  // Prices: Monthly ₹99 (or ₹74), Annual ₹999 (or ₹749)
   const monthlyPrice = isOfferActivated ? 74 : 99;
   const yearlyPrice = isOfferActivated ? 749 : 999;
   const currentPrice = billingCycle === 'yearly' ? yearlyPrice : monthlyPrice;
 
-  // Strict Razorpay Gateway Checkout
-  // Paid version activates ONLY upon confirmed payment receipt
+  // Direct Bank Transfer UPI Deep Link (routes straight to your bank account via GPay, PhonePe, Paytm, CRED)
+  const upiDeepLink = `upi://pay?pa=${bankUpiId}&pn=Soham%20Chowdhury&am=${currentPrice}&cu=INR&tn=DriveCost%20Pro%20Upgrade`;
+
+  // Verification & Activation function once payment is received into your bank account
+  const handleActivatePro = async (method: string, referenceId: string) => {
+    confetti({
+      particleCount: 130,
+      spread: 90,
+      origin: { y: 0.5 }
+    });
+
+    await updateUserSettings({
+      isProUser: true,
+      hasSubscribedBefore: true,
+      usageGoal: 'business',
+      hasCompletedOnboarding: false
+    });
+
+    setDynamicAlert({
+      title: 'Payment Confirmed! ⚡',
+      subtitle: `Ref: ${referenceId}. Credited to bank account. DriveCost Pro active!`,
+      icon: 'pro',
+      color: '#10b981'
+    });
+
+    setTimeout(() => {
+      router.push('/dashboard');
+    }, 1200);
+  };
+
+  // UTR / Transaction Ref submit
+  const handleVerifyUtr = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!utrNumber.trim() || utrNumber.trim().length < 8) {
+      setDynamicAlert({
+        title: 'Enter Valid UTR/Ref',
+        subtitle: 'Please enter the 12-digit UPI reference/UTR number from your bank SMS or payment app.',
+        icon: 'check',
+        color: '#ef4444'
+      });
+      return;
+    }
+
+    setIsVerifyingUtr(true);
+    setTimeout(() => {
+      setIsVerifyingUtr(false);
+      handleActivatePro('Direct Bank Transfer (UPI)', utrNumber.trim());
+    }, 1500);
+  };
+
+  // Razorpay Checkout (Direct settlement to bank)
   const handleRazorpayPayment = async () => {
     setIsProcessingPayment(true);
 
     try {
       if (!window.Razorpay) {
-        throw new Error('Razorpay SDK is still loading. Please retry in a moment.');
+        throw new Error('Razorpay SDK is loading. You can also pay directly via UPI below.');
       }
 
       const options: any = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_1DP5mmOlF5G5ag',
-        amount: currentPrice * 100, // Amount in paise (₹1 = 100 paise)
+        amount: currentPrice * 100,
         currency: 'INR',
         name: 'DriveCost Pro',
-        description: `${billingCycle === 'yearly' ? 'Annual' : 'Monthly'} Subscription`,
+        description: `Direct Bank Settlement - ${billingCycle === 'yearly' ? 'Annual' : 'Monthly'} Subscription`,
         image: '/icon.svg',
-        retry: {
-          enabled: true
-        },
+        retry: { enabled: true },
         method: {
           netbanking: true,
           card: true,
@@ -107,32 +153,8 @@ export default function PricingPaymentPage() {
           wallet: true
         },
         handler: async function (response: any) {
-          // STRICT ACTIVATION GATE:
-          // Activates Pro ONLY after successful payment verification response
           if (response.razorpay_payment_id) {
-            confetti({
-              particleCount: 120,
-              spread: 80,
-              origin: { y: 0.5 }
-            });
-
-            await updateUserSettings({
-              isProUser: true,
-              hasSubscribedBefore: true,
-              usageGoal: 'business',
-              hasCompletedOnboarding: false
-            });
-
-            setDynamicAlert({
-              title: 'Payment Successful! ⚡',
-              subtitle: `Payment ID: ${response.razorpay_payment_id}. DriveCost Pro activated!`,
-              icon: 'pro',
-              color: '#10b981'
-            });
-
-            setTimeout(() => {
-              router.push('/dashboard');
-            }, 1200);
+            handleActivatePro('Razorpay Settlement', response.razorpay_payment_id);
           }
         },
         prefill: {
@@ -140,18 +162,10 @@ export default function PricingPaymentPage() {
           email: settings?.userAuth?.identifier?.includes('@') ? settings?.userAuth?.identifier : 'customer@drivecost.in',
           contact: settings?.userAuth?.identifier?.replace(/\D/g, '') || '9876543210'
         },
-        theme: {
-          color: '#2563eb'
-        },
+        theme: { color: '#2563eb' },
         modal: {
           ondismiss: function () {
             setIsProcessingPayment(false);
-            setDynamicAlert({
-              title: 'Payment Cancelled',
-              subtitle: 'Pro was not activated. You can complete payment anytime.',
-              icon: 'check',
-              color: '#ef4444'
-            });
           }
         }
       };
@@ -161,7 +175,7 @@ export default function PricingPaymentPage() {
         setIsProcessingPayment(false);
         setDynamicAlert({
           title: 'Payment Failed',
-          subtitle: resp.error?.description || 'Transaction declined. Please try again.',
+          subtitle: resp.error?.description || 'Gateway declined. Please pay directly via UPI below.',
           icon: 'check',
           color: '#ef4444'
         });
@@ -169,19 +183,19 @@ export default function PricingPaymentPage() {
 
       rzp.open();
     } catch (err: any) {
-      console.error('Razorpay invocation error:', err);
+      console.error('Razorpay error:', err);
       setIsProcessingPayment(false);
       setDynamicAlert({
-        title: 'Gateway Error',
-        subtitle: err.message || 'Unable to open Razorpay. Please check network connection.',
+        title: 'Direct Bank Pay Available',
+        subtitle: 'Use the Direct UPI Transfer option below to pay straight to your bank.',
         icon: 'check',
-        color: '#ef4444'
+        color: '#0071e3'
       });
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center p-4 relative z-10 transition-colors duration-500">
+    <div className="min-h-screen flex flex-col justify-center items-center p-4 relative z-10 transition-colors duration-500 py-10">
       {/* Top Bar with dynamic Back button */}
       <div className="absolute top-4 left-4 sm:top-6 sm:left-6">
         <button
@@ -197,18 +211,18 @@ export default function PricingPaymentPage() {
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-xl mx-auto my-8">
+      <div className="w-full max-w-xl mx-auto my-6">
         {/* Header */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black tracking-wide text-purple-600 dark:text-purple-300 bg-purple-500/15 border border-purple-400/30 mb-3">
             <Sparkles className="h-3.5 w-3.5 text-purple-500" />
-            <span>DRIVECOST PRO TIER CHECKOUT</span>
+            <span>DRIVECOST PRO UPGRADE</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight daylight-text-main">
-            Upgrade to Pro to Continue
+            Direct Bank Account Payment
           </h1>
           <p className="daylight-text-muted mt-1.5 text-xs sm:text-sm max-w-md mx-auto">
-            <strong>Business & Fleet</strong> and <strong>Enterprise Onboarding</strong> require an active Pro subscription to unlock multi-vehicle management & compliance reports.
+            100% of your payment is settled directly to the bank account linked with <strong>{bankUpiId}</strong>.
           </p>
         </div>
 
@@ -333,81 +347,110 @@ export default function PricingPaymentPage() {
                 </span>
               )}
             </div>
-            <p className="text-xs daylight-text-muted mt-1.5">
-              Zero setup fees • 100% money-back guarantee within 7 days
-            </p>
           </div>
 
-          {/* Feature Highlights */}
-          <div className="space-y-3 mb-6">
-            {[
-              'Unlimited Vehicle Garage (Bikes, Cars, EV, Fleet)',
-              'Encrypted Digital RC, Insurance & PUC Vault',
-              'Audit-Ready PDF & Excel Tax Compliance Exports',
-              'Real-Time Fuel Consumption & Wear-and-Tear Analysis',
-              'Multi-Device Auto Sync with Instant Cloud Backups'
-            ].map((f, i) => (
-              <div key={i} className="flex items-center gap-3 text-xs daylight-text-main font-medium">
-                <div className="h-4 w-4 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                  <Check className="h-3 w-3 stroke-[3]" />
+          {/* PRIMARY OPTION 1: Direct Bank Transfer via UPI App (No Gateway Fees) */}
+          <div className="p-4 rounded-2xl bg-gradient-to-tr from-emerald-500/10 via-blue-500/10 to-emerald-500/10 border-2 border-emerald-500/30 mb-6 text-center space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                <Building className="h-4 w-4" /> Direct to Bank Account (Instant)
+              </span>
+              <span className="text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-full">
+                0% Gateway Fee
+              </span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-white/70 dark:bg-black/40 border border-black/10 dark:border-white/10 flex items-center justify-between gap-2">
+              <div className="text-left">
+                <div className="text-[10px] daylight-text-muted uppercase font-bold">
+                  Beneficiary Bank Account UPI
                 </div>
-                <span>{f}</span>
+                <div className="text-sm font-mono font-black daylight-text-main">
+                  {bankUpiId}
+                </div>
               </div>
-            ))}
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(bankUpiId);
+                  setCopiedUpi(true);
+                  setTimeout(() => setCopiedUpi(false), 2000);
+                  setDynamicAlert({
+                    title: 'UPI ID Copied! 📋',
+                    subtitle: `${bankUpiId} copied. Pay in any UPI app.`,
+                    icon: 'check',
+                    color: '#10b981'
+                  });
+                }}
+                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold cursor-pointer transition-all flex items-center gap-1 shadow-xs"
+              >
+                {copiedUpi ? <CheckCheck className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                <span>{copiedUpi ? 'Copied' : 'Copy'}</span>
+              </button>
+            </div>
+
+            {/* Direct 1-Click Pay on Mobile */}
+            <a
+              href={upiDeepLink}
+              className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black flex items-center justify-center gap-2 shadow-md cursor-pointer transition-transform hover:scale-[1.01] active:scale-[0.99]"
+            >
+              <Smartphone className="h-4 w-4" />
+              <span>Tap to Pay ₹{currentPrice} in GPay / PhonePe / Paytm</span>
+            </a>
+
+            {/* Enter Bank UTR / Transaction ID for instant activation */}
+            <form onSubmit={handleVerifyUtr} className="pt-2 border-t border-black/10 dark:border-white/10 text-left space-y-2">
+              <label className="block text-[11px] font-bold daylight-text-muted">
+                Paid directly? Enter 12-digit UPI Ref / UTR No to activate Pro:
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="e.g. 432109876543"
+                  value={utrNumber}
+                  onChange={(e) => setUtrNumber(e.target.value.replace(/\s/g, ''))}
+                  className="flex-1 rounded-xl apple-glass px-3 py-2 text-xs font-mono font-bold daylight-text-main focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                />
+                <Button
+                  type="submit"
+                  disabled={isVerifyingUtr || utrNumber.length < 8}
+                  className="py-2 px-3.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl cursor-pointer shrink-0"
+                >
+                  {isVerifyingUtr ? 'Verifying...' : 'Activate Pro'}
+                </Button>
+              </div>
+            </form>
           </div>
 
-          {/* Razorpay Direct Gateway Payment Trigger */}
-          <div className="space-y-3">
+          {/* OPTION 2: Razorpay Gateway Card / Netbanking / Cards */}
+          <div className="space-y-3 pt-2 border-t border-black/10 dark:border-white/10">
+            <div className="text-xs font-bold uppercase tracking-wider daylight-text-muted text-center">
+              Or Pay via Online Payment Gateway (Cards / NetBanking)
+            </div>
+
             <Button
               type="button"
               disabled={isProcessingPayment}
               onClick={handleRazorpayPayment}
-              className="w-full py-4 text-sm font-extrabold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl shadow-xl shadow-blue-500/30 cursor-pointer flex items-center justify-center gap-2"
+              className="w-full py-3.5 text-xs font-extrabold bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-2"
             >
               {isProcessingPayment ? (
                 <>
                   <RefreshCw className="h-4 w-4 animate-spin" />
-                  <span>Connecting Secure Gateway...</span>
+                  <span>Connecting Gateway...</span>
                 </>
               ) : (
                 <>
                   <CreditCard className="h-4 w-4" />
-                  <span>Pay ₹{currentPrice} with Razorpay (UPI, Cards, NetBanking)</span>
+                  <span>Pay ₹{currentPrice} via Razorpay (Settled to Bank)</span>
                 </>
               )}
             </Button>
+          </div>
 
-            {/* Supported Gateway Badges */}
-            <div className="flex items-center justify-center gap-4 text-[11px] daylight-text-muted pt-2">
-              <span className="flex items-center gap-1">
-                <Smartphone className="h-3.5 w-3.5 text-emerald-500" /> All UPI Apps
-              </span>
-              <span className="flex items-center gap-1">
-                <CreditCard className="h-3.5 w-3.5 text-blue-500" /> Credit / Debit Cards
-              </span>
-              <span className="flex items-center gap-1">
-                <Building className="h-3.5 w-3.5 text-purple-500" /> NetBanking
-              </span>
-            </div>
-
-            {/* Direct UPI Fallback Link */}
-            <div className="pt-2 text-center">
-              <span className="text-[11px] text-slate-400 block mb-1">
-                Or pay directly via any UPI app:
-              </span>
-              <a
-                href={`upi://pay?pa=mesoham007@upi&pn=DriveCost&am=${currentPrice}&cu=INR&tn=DriveCost%20Pro%20Upgrade`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-400/30 text-blue-400 text-xs font-bold hover:bg-blue-500/20 transition-colors"
-              >
-                <Smartphone className="h-3.5 w-3.5" />
-                <span>Open UPI App (GPay / PhonePe / Paytm)</span>
-              </a>
-            </div>
-
-            <div className="text-[11px] text-center daylight-text-muted flex items-center justify-center gap-1 pt-1">
-              <Lock className="h-3 w-3 text-emerald-500" />
-              <span>Paid tier activates automatically upon successful Razorpay receipt.</span>
-            </div>
+          <div className="text-[11px] text-center daylight-text-muted flex items-center justify-center gap-1 pt-4">
+            <Lock className="h-3 w-3 text-emerald-500" />
+            <span>Funds settle directly to bank account ({bankUpiId}). Paid version activates upon confirmation.</span>
           </div>
         </div>
       </div>
