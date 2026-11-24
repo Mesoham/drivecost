@@ -32,11 +32,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     document.documentElement.style.setProperty('--user-theme-accent', activeColor);
   }, [activeColor]);
 
+  const isSplash = pathname === '/';
   const isOnboarding = pathname === '/onboarding';
   const isLogin = pathname === '/login';
   const isCheckout = pathname === '/checkout';
 
-  if (isOnboarding || isLogin || isCheckout) {
+  if (isSplash || isOnboarding || isLogin || isCheckout) {
     return (
       <main className="min-h-screen relative overflow-hidden transition-colors duration-500">
         <DynamicIsland />

@@ -90,13 +90,22 @@ export default function PricingPaymentPage() {
         throw new Error('Razorpay SDK is still loading. Please retry in a moment.');
       }
 
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_1DP5mmOlF5G5ag', // Default Razorpay Test / Live key
+      const options: any = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_1DP5mmOlF5G5ag',
         amount: currentPrice * 100, // Amount in paise (₹1 = 100 paise)
         currency: 'INR',
         name: 'DriveCost Pro',
         description: `${billingCycle === 'yearly' ? 'Annual' : 'Monthly'} Subscription`,
         image: '/icon.svg',
+        retry: {
+          enabled: true
+        },
+        method: {
+          netbanking: true,
+          card: true,
+          upi: true,
+          wallet: true
+        },
         handler: async function (response: any) {
           // STRICT ACTIVATION GATE:
           // Activates Pro ONLY after successful payment verification response
@@ -128,7 +137,7 @@ export default function PricingPaymentPage() {
         },
         prefill: {
           name: settings?.userAuth?.displayName || 'DriveCost Customer',
-          email: settings?.userAuth?.identifier?.includes('@') ? settings?.userAuth?.identifier : 'billing@drivecost.in',
+          email: settings?.userAuth?.identifier?.includes('@') ? settings?.userAuth?.identifier : 'customer@drivecost.in',
           contact: settings?.userAuth?.identifier?.replace(/\D/g, '') || '9876543210'
         },
         theme: {
@@ -379,6 +388,20 @@ export default function PricingPaymentPage() {
               <span className="flex items-center gap-1">
                 <Building className="h-3.5 w-3.5 text-purple-500" /> NetBanking
               </span>
+            </div>
+
+            {/* Direct UPI Fallback Link */}
+            <div className="pt-2 text-center">
+              <span className="text-[11px] text-slate-400 block mb-1">
+                Or pay directly via any UPI app:
+              </span>
+              <a
+                href={`upi://pay?pa=mesoham007@upi&pn=DriveCost&am=${currentPrice}&cu=INR&tn=DriveCost%20Pro%20Upgrade`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-400/30 text-blue-400 text-xs font-bold hover:bg-blue-500/20 transition-colors"
+              >
+                <Smartphone className="h-3.5 w-3.5" />
+                <span>Open UPI App (GPay / PhonePe / Paytm)</span>
+              </a>
             </div>
 
             <div className="text-[11px] text-center daylight-text-muted flex items-center justify-center gap-1 pt-1">
