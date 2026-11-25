@@ -11,7 +11,7 @@ import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { updateUserSettings, setDynamicAlert, vehicles, settings } = useAppStore();
+  const { switchUserAccount, setDynamicAlert } = useAppStore();
   const [googleLoading, setGoogleLoading] = useState(false);
 
   // 1-Click Clean Google Authentication via official on-device Google chooser
@@ -26,14 +26,13 @@ export default function LoginPage() {
 
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
+      const accountKey = user.email || user.uid;
 
-      await updateUserSettings({
-        userAuth: {
-          isLoggedIn: true,
-          authMethod: 'google',
-          identifier: user.email || 'user@gmail.com',
-          displayName: user.displayName || 'DriveCost User'
-        }
+      const { vehicles: userVehicles } = await switchUserAccount(accountKey, {
+        isLoggedIn: true,
+        authMethod: 'google',
+        identifier: user.email || '',
+        displayName: user.displayName || 'DriveCost User'
       });
 
       setDynamicAlert({
@@ -46,7 +45,7 @@ export default function LoginPage() {
       // Strict user routing sequence:
       // 1. If user has 0 vehicles registered, redirect directly to /onboarding page first
       // 2. Only if user already has at least one vehicle registered, skip to /dashboard
-      if (vehicles.length === 0) {
+      if (userVehicles.length === 0) {
         router.push('/onboarding');
       } else {
         router.push('/dashboard');

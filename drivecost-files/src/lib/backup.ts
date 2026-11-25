@@ -1,5 +1,5 @@
 import type { Vehicle, Expense, Reminder, OdometerLog } from '@/types';
-import { db } from '@/lib/db';
+import { getDb } from '@/lib/db';
 
 export interface DriveCostBackup {
   version: number;
@@ -17,6 +17,7 @@ export interface DriveCostBackup {
  * Generate a complete JSON backup of all user vehicle data
  */
 export async function exportDataToJSON(): Promise<string> {
+  const db = getDb();
   const [vehicles, expenses, reminders, odometerLogs] = await Promise.all([
     db.vehicles.toArray(),
     db.expenses.toArray(),
@@ -57,6 +58,7 @@ export async function restoreDataFromJSON(jsonString: string): Promise<{ success
     }
 
     // Atomic wipe and restore
+    const db = getDb();
     await db.transaction('rw', db.vehicles, db.expenses, db.reminders, db.odometerLogs, async () => {
       await db.vehicles.clear();
       await db.expenses.clear();

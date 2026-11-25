@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import type { Vehicle, Expense, Reminder, UserSettings, VehicleDocument } from '@/types';
-import { db, getSettings, updateSettings } from '@/lib/db';
+import { getDb, getSettings, updateSettings, switchActiveUserDb, getActiveUserKey, DEFAULT_SETTINGS } from '@/lib/db';
 import { loadDemoDataIntoDB } from '@/lib/demo-data';
+import { auth } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
 
 interface DynamicAlertPayload {
   title: string;
@@ -28,6 +30,8 @@ interface AppState {
 
   // Actions
   initialize: () => Promise<void>;
+  switchUserAccount: (userId: string, userAuth: NonNullable<UserSettings['userAuth']>) => Promise<{ vehicles: Vehicle[] }>;
+  logoutUser: () => Promise<void>;
   setSelectedVehicleId: (id: string | 'all') => void;
   loadDemoData: () => Promise<void>;
   clearAllData: () => Promise<void>;
@@ -83,6 +87,22 @@ export const useAppStore = create<AppState>((set, get) => ({
   initialize: async () => {
     try {
       set({ isLoading: true });
+      const activeKey = getActiveUserKey();
+      if (activeKey === 'guest') {
+        set({
+          vehicles: [],
+          expenses: [],
+          reminders: [],
+          documents: [],
+          selectedVehicleId: 'all',
+          settings: DEFAULT_SETTINGS,
+          isLoading: false,
+          isInitialized: true
+        });
+        return;
+      }
+
+      const db = getDb();
       const [vehicles, expenses, reminders, documents, settings] = await Promise.all([
         db.vehicles.toArray(),
         db.expenses.toArray(),
@@ -91,10 +111,11 @@ export const useAppStore = create<AppState>((set, get) => ({
         getSettings()
       ]);
 
-      const activeVeh = vehicles.find(v => !v.archived);
+      const activeVehicles = vehicles.filter(v => !v.archived);
+      const activeVeh = activeVehicles[0];
 
       set({
-        vehicles: vehicles.filter(v => !v.archived),
+        vehicles: activeVehicles,
         expenses: expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
         reminders: reminders.sort((a, b) => {
           if (!a.dueDate) return 1;
@@ -115,6 +136,60 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
+  switchUserAccount: async (userId, userAuth) => {
+    set({ isLoading: true });
+    const db = switchActiveUserDb(userId);
+    const [vehicles, expenses, reminders, documents] = await Promise.all([
+      db.vehicles.toArray(),
+      db.expenses.toArray(),
+      db.reminders.toArray(),
+      db.documents.toArray()
+    ]);
+
+    const settings = await updateSettings({ userAuth });
+    const activeVehicles = vehicles.filter(v => !v.archived);
+    const activeVeh = activeVehicles[0];
+
+    set({
+      vehicles: activeVehicles,
+      expenses: expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+      reminders: reminders.sort((a, b) => {
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      }),
+      documents: documents.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+      selectedVehicleId: 'all',
+      settings: {
+        ...settings,
+        activeVehicleColor: activeVeh?.color || settings.activeVehicleColor || '#0071e3'
+      },
+      isLoading: false,
+      isInitialized: true
+    });
+
+    return { vehicles: activeVehicles };
+  },
+
+  logoutUser: async () => {
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.error('Firebase signOut error:', err);
+    }
+    switchActiveUserDb(null);
+    set({
+      vehicles: [],
+      expenses: [],
+      reminders: [],
+      documents: [],
+      selectedVehicleId: 'all',
+      settings: DEFAULT_SETTINGS,
+      isLoading: false,
+      isInitialized: true
+    });
+  },
+
   setSelectedVehicleId: (id) => {
     set({ selectedVehicleId: id });
     if (id !== 'all') {
@@ -133,6 +208,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   loadDemoData: async () => {
     set({ isLoading: true });
+    const db = getDb();
     await loadDemoDataIntoDB(db);
     const updatedSettings = await updateSettings({ hasCompletedOnboarding: true });
     await get().initialize();
@@ -141,15 +217,18 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   clearAllData: async () => {
     set({ isLoading: true });
+    const db = getDb();
     await db.vehicles.clear();
     await db.expenses.clear();
     await db.reminders.clear();
     await db.odometerLogs.clear();
-    const settings = await updateSettings({ hasCompletedOnboarding: false });
+    await db.documents.clear();
+    const settings = await updateSettings({ hasCompletedOnboarding: false, isProUser: false });
     set({
       vehicles: [],
       expenses: [],
       reminders: [],
+      documents: [],
       selectedVehicleId: 'all',
       settings,
       isLoading: false
@@ -166,6 +245,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       createdAt: now,
       updatedAt: now
     };
+    const db = getDb();
     await db.vehicles.add(vehicle);
 
     if (vehicle.color) {
@@ -187,6 +267,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   updateVehicle: async (id, updates) => {
     const now = new Date().toISOString();
+    const db = getDb();
     await db.vehicles.update(id, { ...updates, updatedAt: now });
     if (updates.color) {
       await get().updateUserSettings({ activeVehicleColor: updates.color });
@@ -197,6 +278,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   deleteVehicle: async (id) => {
+    const db = getDb();
     await db.vehicles.delete(id);
     await db.expenses.where('vehicleId').equals(id).delete();
     await db.reminders.where('vehicleId').equals(id).delete();
@@ -210,6 +292,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   archiveVehicle: async (id, archive) => {
+    const db = getDb();
     await db.vehicles.update(id, { archived: archive, updatedAt: new Date().toISOString() });
     set(state => ({
       vehicles: archive ? state.vehicles.filter(v => v.id !== id) : state.vehicles,
@@ -226,6 +309,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       createdAt: now,
       updatedAt: now
     };
+    const db = getDb();
     await db.expenses.add(expense);
 
     if (typeof expense.odometer === 'number' && expense.odometer > 0) {
@@ -243,6 +327,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   updateExpense: async (id, updates) => {
     const now = new Date().toISOString();
+    const db = getDb();
     await db.expenses.update(id, { ...updates, updatedAt: now });
     set(state => ({
       expenses: state.expenses.map(e => (e.id === id ? { ...e, ...updates, updatedAt: now } : e))
@@ -250,6 +335,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   deleteExpense: async (id) => {
+    const db = getDb();
     await db.expenses.delete(id);
     set(state => ({
       expenses: state.expenses.filter(e => e.id !== id)
@@ -266,6 +352,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       createdAt: now,
       updatedAt: now
     };
+    const db = getDb();
     await db.reminders.add(reminder);
     set(state => ({
       reminders: [...state.reminders, reminder]
@@ -275,6 +362,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   updateReminder: async (id, updates) => {
     const now = new Date().toISOString();
+    const db = getDb();
     await db.reminders.update(id, { ...updates, updatedAt: now });
     set(state => ({
       reminders: state.reminders.map(r => (r.id === id ? { ...r, ...updates, updatedAt: now } : r))
@@ -291,6 +379,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   deleteReminder: async (id) => {
+    const db = getDb();
     await db.reminders.delete(id);
     set(state => ({
       reminders: state.reminders.filter(r => r.id !== id)
@@ -306,6 +395,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       createdAt: now,
       updatedAt: now
     };
+    const db = getDb();
     await db.documents.add(document);
     set(state => ({
       documents: [document, ...state.documents]
@@ -314,6 +404,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   deleteDocument: async (id) => {
+    const db = getDb();
     await db.documents.delete(id);
     set(state => ({
       documents: state.documents.filter(d => d.id !== id)
@@ -372,6 +463,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
     ];
 
+    const db = getDb();
     for (const d of demoDocs) {
       const id = `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       await db.documents.add({ ...d, id });

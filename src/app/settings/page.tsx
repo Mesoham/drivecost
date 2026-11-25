@@ -9,18 +9,11 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { 
   Download, 
   Upload, 
-  Trash2, 
   Sparkles, 
-  ShieldCheck, 
   Bell, 
   AlertTriangle,
   LogOut,
-  User,
-  Mail,
-  Check,
-  Calendar,
-  Layers,
-  Smartphone
+  User
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -28,22 +21,15 @@ export default function SettingsPage() {
   const router = useRouter();
   const { 
     settings, 
-    vehicles, 
     updateUserSettings, 
     loadDemoData, 
     clearAllData,
+    logoutUser,
     setDynamicAlert
   } = useAppStore();
 
   const handleLogout = async () => {
-    await updateUserSettings({
-      userAuth: {
-        isLoggedIn: false,
-        authMethod: 'phone',
-        identifier: '',
-        displayName: ''
-      }
-    });
+    await logoutUser();
 
     setDynamicAlert({
       title: 'Logged Out Successfully',
@@ -145,7 +131,7 @@ export default function SettingsPage() {
         </div>
       </Card>
 
-      {/* SECTION 2: Unified & Consolidated Notifications Hub */}
+      {/* SECTION 2: Clean Consolidated Notifications */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -153,257 +139,169 @@ export default function SettingsPage() {
             <span>Notifications</span>
           </CardTitle>
           <CardDescription>
-            Configure channels (Push, Email) and reminder timing (7d, 3d, 1d, General) in one unified place
+            Manage push notification alerts and reminder timeline in one place
           </CardDescription>
         </CardHeader>
 
-        <div className="space-y-6">
-          {/* 1. Delivery Channels */}
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider daylight-text-muted mb-2.5">
-              1. Delivery Channels
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Push Channel */}
-              <div 
-                onClick={async () => {
-                  const currentPush = settings?.notificationPreferences?.channels?.push ?? true;
-                  if (!currentPush && 'Notification' in window) {
-                    await Notification.requestPermission();
-                  }
-                  await updateUserSettings({
-                    notificationPreferences: {
-                      channels: {
-                        push: !currentPush,
-                        email: settings?.notificationPreferences?.channels?.email ?? false
-                      },
-                      emailAddress: settings?.notificationPreferences?.emailAddress || settings?.userAuth?.identifier || '',
-                      categories: settings?.notificationPreferences?.categories || {
-                        dueReminders: { enabled: true, notify7Days: true, notify3Days: true, notify1Day: true },
-                        generalReminders: { enabled: true }
-                      }
-                    }
-                  });
-                }}
-                className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                  (settings?.notificationPreferences?.channels?.push ?? true)
-                    ? 'border-blue-500 bg-blue-500/10'
-                    : 'border-black/10 dark:border-white/10 hover:border-black/20'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-xl bg-blue-600 text-white flex items-center justify-center">
-                    <Smartphone className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold daylight-text-main">Push Notifications</div>
-                    <div className="text-[11px] daylight-text-muted">Instant on-device banner popups</div>
-                  </div>
-                </div>
-                <div className={`h-5 w-5 rounded-full flex items-center justify-center ${
-                  (settings?.notificationPreferences?.channels?.push ?? true)
-                    ? 'bg-blue-600 text-white'
-                    : 'border border-slate-400'
-                }`}>
-                  {(settings?.notificationPreferences?.channels?.push ?? true) && (
-                    <Check className="h-3 w-3 stroke-[3]" />
-                  )}
-                </div>
-              </div>
-
-              {/* Email Channel */}
-              <div 
-                onClick={async () => {
-                  const currentEmail = settings?.notificationPreferences?.channels?.email ?? false;
-                  await updateUserSettings({
-                    notificationPreferences: {
-                      channels: {
-                        push: settings?.notificationPreferences?.channels?.push ?? true,
-                        email: !currentEmail
-                      },
-                      emailAddress: settings?.notificationPreferences?.emailAddress || settings?.userAuth?.identifier || '',
-                      categories: settings?.notificationPreferences?.categories || {
-                        dueReminders: { enabled: true, notify7Days: true, notify3Days: true, notify1Day: true },
-                        generalReminders: { enabled: true }
-                      }
-                    }
-                  });
-                }}
-                className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                  (settings?.notificationPreferences?.channels?.email ?? false)
-                    ? 'border-purple-500 bg-purple-500/10'
-                    : 'border-black/10 dark:border-white/10 hover:border-black/20'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-xl bg-purple-600 text-white flex items-center justify-center">
-                    <Mail className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold daylight-text-main">Email Notifications</div>
-                    <div className="text-[11px] daylight-text-muted">Direct inbox delivery & summaries</div>
-                  </div>
-                </div>
-                <div className={`h-5 w-5 rounded-full flex items-center justify-center ${
-                  (settings?.notificationPreferences?.channels?.email ?? false)
-                    ? 'bg-purple-600 text-white'
-                    : 'border border-slate-400'
-                }`}>
-                  {(settings?.notificationPreferences?.channels?.email ?? false) && (
-                    <Check className="h-3 w-3 stroke-[3]" />
-                  )}
-                </div>
-              </div>
+        <div className="space-y-4">
+          {/* Dropdown 1: Notification Channel */}
+          <div className="flex items-center justify-between gap-4 py-2 border-b border-black/5 dark:border-white/5">
+            <div>
+              <div className="text-sm font-semibold daylight-text-main">Notification Type</div>
+              <div className="text-xs daylight-text-muted">Browser push alerts for upcoming due dates</div>
             </div>
-
-            {/* Email Address Input (if email channel is enabled) */}
-            {(settings?.notificationPreferences?.channels?.email ?? false) && (
-              <div className="mt-3 p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
-                <label className="block text-[11px] font-bold daylight-text-muted mb-1">
-                  Recipient Email Address
-                </label>
-                <input
-                  type="email"
-                  placeholder="yourname@gmail.com"
-                  defaultValue={settings?.notificationPreferences?.emailAddress || settings?.userAuth?.identifier || ''}
-                  onBlur={(e) => {
-                    updateUserSettings({
-                      notificationPreferences: {
-                        channels: settings?.notificationPreferences?.channels || { push: true, email: true },
-                        emailAddress: e.target.value.trim(),
-                        categories: settings?.notificationPreferences?.categories || {
-                          dueReminders: { enabled: true, notify7Days: true, notify3Days: true, notify1Day: true },
-                          generalReminders: { enabled: true }
-                        }
-                      }
-                    });
+            <select
+              value={
+                (settings?.enableBrowserNotifications || settings?.notificationPreferences?.channels?.push)
+                  ? 'push'
+                  : 'off'
+              }
+              onChange={async (e) => {
+                const mode = e.target.value as 'push' | 'off';
+                if (mode === 'push' && typeof window !== 'undefined' && 'Notification' in window) {
+                  const perm = await Notification.requestPermission();
+                  if (perm === 'denied') {
                     setDynamicAlert({
-                      title: 'Email Saved',
-                      subtitle: `Alerts will be sent to ${e.target.value.trim()}`,
+                      title: 'Browser Permission Blocked',
+                      subtitle: 'Please allow notifications in your browser site settings.',
                       icon: 'check',
-                      color: '#0071e3'
+                      color: '#ef4444'
                     });
-                  }}
-                  className="w-full rounded-xl apple-glass px-3.5 py-2 text-xs font-semibold daylight-text-main focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                />
-              </div>
-            )}
-          </div>
-
-          {/* 2. Notification Timing & Categories */}
-          <div className="pt-4 border-t border-black/5 dark:border-white/5 space-y-4">
-            <h4 className="text-xs font-bold uppercase tracking-wider daylight-text-muted mb-2">
-              2. Reminder Schedules & Categories
-            </h4>
-
-            {/* Category A: Due Date Triggers (7d, 3d, 1d) */}
-            <div className="p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-emerald-500" />
-                  <span className="text-xs font-bold daylight-text-main">Due Date Reminders (PUC, Insurance, Tax, EMI)</span>
-                </div>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-extrabold uppercase">
-                  Automatic
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {[
-                  { key: 'notify7Days', label: 'Due in 7 Days', sub: 'Early advance notice' },
-                  { key: 'notify3Days', label: 'Due in 3 Days', sub: 'Preparation reminder' },
-                  { key: 'notify1Day', label: 'Due in 1 Day', sub: 'Final 24-hr urgent alert' }
-                ].map((item) => {
-                  const isChecked = (settings?.notificationPreferences?.categories?.dueReminders as any)?.[item.key] ?? true;
-                  return (
-                    <button
-                      key={item.key}
-                      type="button"
-                      onClick={async () => {
-                        await updateUserSettings({
-                          notificationPreferences: {
-                            channels: settings?.notificationPreferences?.channels || { push: true, email: false },
-                            emailAddress: settings?.notificationPreferences?.emailAddress,
-                            categories: {
-                              dueReminders: {
-                                enabled: true,
-                                notify7Days: item.key === 'notify7Days' ? !isChecked : (settings?.notificationPreferences?.categories?.dueReminders?.notify7Days ?? true),
-                                notify3Days: item.key === 'notify3Days' ? !isChecked : (settings?.notificationPreferences?.categories?.dueReminders?.notify3Days ?? true),
-                                notify1Day: item.key === 'notify1Day' ? !isChecked : (settings?.notificationPreferences?.categories?.dueReminders?.notify1Day ?? true)
-                              },
-                              generalReminders: {
-                                enabled: settings?.notificationPreferences?.categories?.generalReminders?.enabled ?? true
-                              }
-                            }
-                          }
-                        });
-                      }}
-                      className={`p-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
-                        isChecked ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-black/10 dark:border-white/10 opacity-60'
-                      }`}
-                    >
-                      <div>
-                        <div className="text-xs font-bold daylight-text-main">{item.label}</div>
-                        <div className="text-[10px] daylight-text-muted">{item.sub}</div>
-                      </div>
-                      <div className={`h-4 w-4 rounded-full flex items-center justify-center ${
-                        isChecked ? 'bg-emerald-500 text-white' : 'border border-slate-400'
-                      }`}>
-                        {isChecked && <Check className="h-2.5 w-2.5 stroke-[3]" />}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Category B: General Maintenance & Service Reminders */}
-            <div 
-              onClick={async () => {
-                const current = settings?.notificationPreferences?.categories?.generalReminders?.enabled ?? true;
+                    return;
+                  }
+                }
+                const duePrefs = settings?.notificationPreferences?.categories?.dueReminders || {
+                  enabled: true,
+                  notify7Days: true,
+                  notify3Days: true,
+                  notify1Day: true
+                };
                 await updateUserSettings({
+                  enableBrowserNotifications: mode === 'push',
                   notificationPreferences: {
-                    channels: settings?.notificationPreferences?.channels || { push: true, email: false },
-                    emailAddress: settings?.notificationPreferences?.emailAddress,
+                    channels: {
+                      push: mode === 'push',
+                      email: false
+                    },
                     categories: {
-                      dueReminders: settings?.notificationPreferences?.categories?.dueReminders || {
-                        enabled: true,
-                        notify7Days: true,
-                        notify3Days: true,
-                        notify1Day: true
-                      },
-                      generalReminders: {
-                        enabled: !current
-                      }
+                      dueReminders: duePrefs,
+                      generalReminders: { enabled: true }
                     }
                   }
                 });
+                setDynamicAlert({
+                  title: mode === 'push' ? 'Push Notifications Enabled' : 'Notifications Turned Off',
+                  subtitle: mode === 'push' ? 'You will receive browser alerts for due reminders.' : 'All reminder alerts are muted.',
+                  icon: 'check',
+                  color: '#0071e3'
+                });
               }}
-              className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                (settings?.notificationPreferences?.categories?.generalReminders?.enabled ?? true)
-                  ? 'border-blue-500/40 bg-blue-500/10'
-                  : 'border-black/10 dark:border-white/10 opacity-60'
-              }`}
+              className="text-xs font-semibold rounded-xl apple-glass px-3 py-2 daylight-text-main focus:outline-none cursor-pointer"
             >
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-xl bg-blue-600 text-white flex items-center justify-center">
-                  <Layers className="h-4 w-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold daylight-text-main">General & Periodic Reminders</div>
-                  <div className="text-[11px] daylight-text-muted">Chain lubrication, tyre rotation, service & custom vehicle tasks</div>
-                </div>
-              </div>
-              <div className={`h-5 w-5 rounded-full flex items-center justify-center ${
-                (settings?.notificationPreferences?.categories?.generalReminders?.enabled ?? true)
-                  ? 'bg-blue-600 text-white'
-                  : 'border border-slate-400'
-              }`}>
-                {(settings?.notificationPreferences?.categories?.generalReminders?.enabled ?? true) && (
-                  <Check className="h-3 w-3 stroke-[3]" />
-                )}
-              </div>
+              <option value="push">Push Notifications</option>
+              <option value="off">Off (Disabled)</option>
+            </select>
+          </div>
+
+          {/* Dropdown 2: Reminder Timeline */}
+          <div className="flex items-center justify-between gap-4 py-2 border-b border-black/5 dark:border-white/5">
+            <div>
+              <div className="text-sm font-semibold daylight-text-main">Reminder Timeline</div>
+              <div className="text-xs daylight-text-muted">When to notify before insurance, PUC, or service due dates</div>
             </div>
+            <select
+              value={(() => {
+                const d = settings?.notificationPreferences?.categories?.dueReminders;
+                if (!d) return 'all';
+                if (d.notify7Days && d.notify3Days && d.notify1Day) return 'all';
+                if (d.notify7Days && !d.notify3Days && !d.notify1Day) return '7';
+                if (!d.notify7Days && d.notify3Days && !d.notify1Day) return '3';
+                if (!d.notify7Days && !d.notify3Days && d.notify1Day) return '1';
+                return 'all';
+              })()}
+              onChange={async (e) => {
+                const val = e.target.value as 'all' | '7' | '3' | '1';
+                const dueReminders = {
+                  enabled: true,
+                  notify7Days: val === 'all' || val === '7',
+                  notify3Days: val === 'all' || val === '3',
+                  notify1Day: val === 'all' || val === '1'
+                };
+                await updateUserSettings({
+                  advanceWarningDays: val === '1' ? 1 : val === '3' ? 3 : 7,
+                  notificationPreferences: {
+                    channels: {
+                      push: Boolean(settings?.enableBrowserNotifications || settings?.notificationPreferences?.channels?.push),
+                      email: false
+                    },
+                    categories: {
+                      dueReminders,
+                      generalReminders: { enabled: true }
+                    }
+                  }
+                });
+                setDynamicAlert({
+                  title: 'Reminder Timeline Updated',
+                  subtitle: val === 'all' ? 'Alerts set for 7, 3 & 1 day before due' : `Alerts set for ${val} day(s) before due`,
+                  icon: 'check',
+                  color: '#10b981'
+                });
+              }}
+              className="text-xs font-semibold rounded-xl apple-glass px-3 py-2 daylight-text-main focus:outline-none cursor-pointer"
+            >
+              <option value="all">All (7, 3 &amp; 1 Days Before)</option>
+              <option value="7">7 Days Before</option>
+              <option value="3">3 Days Before</option>
+              <option value="1">1 Day Before</option>
+            </select>
+          </div>
+
+          {/* Test Push Notification */}
+          <div className="flex items-center justify-between gap-4 pt-1">
+            <div>
+              <div className="text-sm font-semibold daylight-text-main">Test Push Notification</div>
+              <div className="text-xs daylight-text-muted">Verify browser alerts work on this device right now</div>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                if (typeof window === 'undefined' || !('Notification' in window)) {
+                  setDynamicAlert({
+                    title: 'Not Supported',
+                    subtitle: 'This browser does not support desktop push notifications.',
+                    icon: 'check',
+                    color: '#ef4444'
+                  });
+                  return;
+                }
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                  new Notification('DriveCost Test Alert 🚗', {
+                    body: 'Push notifications are working! You will be alerted for upcoming vehicle reminders.',
+                    icon: '/icon.svg'
+                  });
+                  setDynamicAlert({
+                    title: 'Test Notification Sent!',
+                    subtitle: 'Check your device notification banner.',
+                    icon: 'check',
+                    color: '#10b981'
+                  });
+                } else {
+                  setDynamicAlert({
+                    title: 'Permission Required',
+                    subtitle: 'Please allow notifications in your browser to receive push alerts.',
+                    icon: 'check',
+                    color: '#ef4444'
+                  });
+                }
+              }}
+              className="text-xs gap-1.5"
+            >
+              <Bell className="h-3.5 w-3.5 text-purple-500" />
+              <span>Send Test Alert</span>
+            </Button>
           </div>
         </div>
       </Card>

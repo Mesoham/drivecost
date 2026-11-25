@@ -9,12 +9,62 @@ import { DynamicIsland } from '@/components/dynamic-island';
 import { usePathname } from 'next/navigation';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { initialize, settings } = useAppStore();
+  const { initialize, settings, reminders, vehicles } = useAppStore();
   const pathname = usePathname();
 
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  // Trigger real browser Push Notifications for due/upcoming reminders
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    const pushEnabled =
+      settings?.enableBrowserNotifications ||
+      settings?.notificationPreferences?.channels?.push;
+    if (!pushEnabled || Notification.permission !== 'granted') return;
+    if (!reminders.length) return;
+
+    const duePrefs = settings?.notificationPreferences?.categories?.dueReminders;
+    const today = new Date();
+    const todayKey = today.toISOString().slice(0, 10);
+
+    reminders.forEach((r) => {
+      if (r.status === 'completed' || !r.dueDate) return;
+      const due = new Date(r.dueDate);
+      const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+      const shouldNotify =
+        diffDays <= 0 ||
+        (diffDays <= 1 && (duePrefs?.notify1Day ?? true)) ||
+        (diffDays <= 3 && (duePrefs?.notify3Days ?? true)) ||
+        (diffDays <= 7 && (duePrefs?.notify7Days ?? true));
+
+      if (!shouldNotify) return;
+
+      const sentKey = `drivecost_notif_${r.id}_${todayKey}`;
+      if (localStorage.getItem(sentKey)) return;
+
+      const veh = vehicles.find((v) => v.id === r.vehicleId);
+      const vehPrefix = veh ? `${veh.name}: ` : '';
+      const dueLabel =
+        diffDays < 0
+          ? `Overdue by ${Math.abs(diffDays)} day(s)`
+          : diffDays === 0
+          ? 'Due today'
+          : `Due in ${diffDays} day(s)`;
+
+      try {
+        new Notification(`DriveCost Reminder — ${vehPrefix}${r.title}`, {
+          body: `${dueLabel} (${r.dueDate}). Tap to review in DriveCost.`,
+          icon: '/icon.svg'
+        });
+        localStorage.setItem(sentKey, '1');
+      } catch (err) {
+        console.warn('Browser notification failed:', err);
+      }
+    });
+  }, [settings, reminders, vehicles]);
 
   // Synchronize theme with html element
   useEffect(() => {

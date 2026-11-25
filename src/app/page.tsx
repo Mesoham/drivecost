@@ -33,7 +33,7 @@ export default function RootPage() {
     const navTimer = setTimeout(() => {
       if (!settings?.userAuth?.isLoggedIn) {
         router.replace('/login');
-      } else if (!settings?.hasCompletedOnboarding && vehicles.length === 0) {
+      } else if (vehicles.length === 0) {
         router.replace('/onboarding');
       } else {
         router.replace('/dashboard');
