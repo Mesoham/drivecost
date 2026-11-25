@@ -349,24 +349,27 @@ export default function PricingPaymentPage() {
             </div>
           </div>
 
-          {/* PRIMARY OPTION 1: Direct Bank Transfer via UPI App (No Gateway Fees) */}
-          <div className="p-4 rounded-2xl bg-gradient-to-tr from-emerald-500/10 via-blue-500/10 to-emerald-500/10 border-2 border-emerald-500/30 mb-6 text-center space-y-3">
+          {/* Primary Bank Settlement (Direct to Bank - 0% Fee, Instant & Verified) */}
+          <div className="p-5 rounded-2xl bg-gradient-to-tr from-emerald-500/10 via-blue-500/10 to-emerald-500/10 border-2 border-emerald-500/30 mb-6 text-center space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                <Building className="h-4 w-4" /> Direct to Bank Account (Instant)
+                <Building className="h-4 w-4" /> Direct Bank Account Settlement
               </span>
-              <span className="text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-full">
-                0% Gateway Fee
+              <span className="text-[10px] font-bold bg-emerald-500 text-white px-2.5 py-0.5 rounded-full">
+                0% Gateway Fee • Instant
               </span>
             </div>
 
-            <div className="p-3 rounded-xl bg-white/70 dark:bg-black/40 border border-black/10 dark:border-white/10 flex items-center justify-between gap-2">
+            <div className="p-3.5 rounded-xl bg-white/70 dark:bg-black/40 border border-black/10 dark:border-white/10 flex items-center justify-between gap-2">
               <div className="text-left">
                 <div className="text-[10px] daylight-text-muted uppercase font-bold">
-                  Beneficiary Bank Account UPI
+                  Beneficiary Bank Account UPI ID
                 </div>
-                <div className="text-sm font-mono font-black daylight-text-main">
+                <div className="text-base font-mono font-black daylight-text-main">
                   {bankUpiId}
+                </div>
+                <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
+                  Verified Account Holder: Soham Chowdhury
                 </div>
               </div>
               <button
@@ -382,75 +385,52 @@ export default function PricingPaymentPage() {
                     color: '#10b981'
                   });
                 }}
-                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold cursor-pointer transition-all flex items-center gap-1 shadow-xs"
+                className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-sm"
               >
                 {copiedUpi ? <CheckCheck className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                <span>{copiedUpi ? 'Copied' : 'Copy'}</span>
+                <span>{copiedUpi ? 'Copied' : 'Copy UPI'}</span>
               </button>
             </div>
 
-            {/* Direct 1-Click Pay on Mobile */}
+            {/* Direct 1-Click Pay on Mobile (GPay, PhonePe, Paytm, CRED, BHIM) */}
             <a
               href={upiDeepLink}
-              className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black flex items-center justify-center gap-2 shadow-md cursor-pointer transition-transform hover:scale-[1.01] active:scale-[0.99]"
+              className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-sm font-black flex items-center justify-center gap-2 shadow-lg cursor-pointer transition-transform hover:scale-[1.01] active:scale-[0.99]"
             >
               <Smartphone className="h-4 w-4" />
               <span>Tap to Pay ₹{currentPrice} in GPay / PhonePe / Paytm</span>
             </a>
 
             {/* Enter Bank UTR / Transaction ID for instant activation */}
-            <form onSubmit={handleVerifyUtr} className="pt-2 border-t border-black/10 dark:border-white/10 text-left space-y-2">
-              <label className="block text-[11px] font-bold daylight-text-muted">
-                Paid directly? Enter 12-digit UPI Ref / UTR No to activate Pro:
+            <form onSubmit={handleVerifyUtr} className="pt-3 border-t border-black/10 dark:border-white/10 text-left space-y-2">
+              <label className="block text-[11px] font-bold daylight-text-main">
+                Completed payment? Enter 12-digit UPI Ref / UTR No to unlock Pro:
               </label>
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="e.g. 432109876543"
+                  placeholder="e.g. 432109876543 (from payment receipt)"
                   value={utrNumber}
                   onChange={(e) => setUtrNumber(e.target.value.replace(/\s/g, ''))}
-                  className="flex-1 rounded-xl apple-glass px-3 py-2 text-xs font-mono font-bold daylight-text-main focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                  className="flex-1 rounded-xl apple-glass px-3.5 py-2.5 text-xs font-mono font-bold daylight-text-main focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                 />
                 <Button
                   type="submit"
                   disabled={isVerifyingUtr || utrNumber.length < 8}
-                  className="py-2 px-3.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl cursor-pointer shrink-0"
+                  className="py-2.5 px-4 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl cursor-pointer shrink-0 shadow-md"
                 >
                   {isVerifyingUtr ? 'Verifying...' : 'Activate Pro'}
                 </Button>
               </div>
+              <p className="text-[10px] daylight-text-muted">
+                Your 12-digit UTR is in your GPay / PhonePe / Paytm transaction details and bank SMS.
+              </p>
             </form>
           </div>
 
-          {/* OPTION 2: Razorpay Gateway Card / Netbanking / Cards */}
-          <div className="space-y-3 pt-2 border-t border-black/10 dark:border-white/10">
-            <div className="text-xs font-bold uppercase tracking-wider daylight-text-muted text-center">
-              Or Pay via Online Payment Gateway (Cards / NetBanking)
-            </div>
-
-            <Button
-              type="button"
-              disabled={isProcessingPayment}
-              onClick={handleRazorpayPayment}
-              className="w-full py-3.5 text-xs font-extrabold bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-2"
-            >
-              {isProcessingPayment ? (
-                <>
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  <span>Connecting Gateway...</span>
-                </>
-              ) : (
-                <>
-                  <CreditCard className="h-4 w-4" />
-                  <span>Pay ₹{currentPrice} via Razorpay (Settled to Bank)</span>
-                </>
-              )}
-            </Button>
-          </div>
-
-          <div className="text-[11px] text-center daylight-text-muted flex items-center justify-center gap-1 pt-4">
-            <Lock className="h-3 w-3 text-emerald-500" />
-            <span>Funds settle directly to bank account ({bankUpiId}). Paid version activates upon confirmation.</span>
+          <div className="text-[11px] text-center daylight-text-muted flex items-center justify-center gap-1.5 pt-2">
+            <Lock className="h-3.5 w-3.5 text-emerald-500" />
+            <span>100% Secure • Funds settle directly to bank account ({bankUpiId}) • Instant Pro Activation</span>
           </div>
         </div>
       </div>
