@@ -60,7 +60,11 @@ export function Navigation() {
     { label: 'Settings', href: '/settings', icon: Settings },
     { label: 'Download the app', href: '/drivecost.apk', icon: Download, download: true },
     { label: 'FAQ', href: '/faq', icon: HelpCircle },
-    { label: 'Privacy & Security', href: '/privacy', icon: ShieldCheck }
+    { label: 'Privacy Policy', href: '/privacy', icon: ShieldCheck },
+    { label: 'Terms & Conditions', href: '/terms', icon: ShieldCheck },
+    { label: 'Cancellation & Refund', href: '/cancellation-and-refund', icon: ShieldCheck },
+    { label: 'Shipping & Exchange', href: '/shipping-and-exchange', icon: ShieldCheck },
+    { label: 'Contact Us', href: '/contact-us', icon: Mail }
   ];
 
   const renderSidebarContent = (isMobile = false) => (

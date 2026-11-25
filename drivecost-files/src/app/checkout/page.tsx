@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppStore } from '@/store/app-store';
 import { Button } from '@/components/ui/button';
@@ -431,6 +432,34 @@ export default function PricingPaymentPage() {
           <div className="text-[11px] text-center daylight-text-muted flex items-center justify-center gap-1.5 pt-2">
             <Lock className="h-3.5 w-3.5 text-emerald-500" />
             <span>100% Secure • Funds settle directly to bank account ({bankUpiId}) • Instant Pro Activation</span>
+          </div>
+
+          {/* Mandatory Payment Gateway Policy & Legal Compliance Footer */}
+          <div className="mt-8 pt-6 border-t border-black/10 dark:border-white/10 text-center space-y-2 text-[11px] daylight-text-muted">
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 font-semibold">
+              <Link href="/terms" className="hover:text-blue-500 hover:underline">
+                Terms & Conditions
+              </Link>
+              <span>•</span>
+              <Link href="/privacy" className="hover:text-blue-500 hover:underline">
+                Privacy Policy
+              </Link>
+              <span>•</span>
+              <Link href="/cancellation-and-refund" className="hover:text-blue-500 hover:underline">
+                Cancellation & Refund
+              </Link>
+              <span>•</span>
+              <Link href="/shipping-and-exchange" className="hover:text-blue-500 hover:underline">
+                Shipping & Exchange
+              </Link>
+              <span>•</span>
+              <Link href="/contact-us" className="hover:text-blue-500 hover:underline">
+                Contact Us
+              </Link>
+            </div>
+            <p className="text-[10px] text-slate-400">
+              DriveCost India • Handled under standard RBI & NPCI compliance guidelines.
+            </p>
           </div>
         </div>
       </div>

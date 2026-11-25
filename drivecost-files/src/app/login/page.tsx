@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/app-store';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -151,6 +152,31 @@ export default function LoginPage() {
         <div className="mt-8 flex items-center justify-center gap-2 text-xs daylight-text-muted">
           <ShieldCheck className="h-4 w-4 text-emerald-500" />
           <span>Local-first vault • 100% encrypted & private to this device</span>
+        </div>
+
+        {/* Razorpay & Legal Compliance Footer */}
+        <div className="pt-4 text-center space-y-1.5 text-[11px] daylight-text-muted">
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-medium">
+            <Link href="/terms" className="hover:text-blue-500 hover:underline">
+              Terms & Conditions
+            </Link>
+            <span>•</span>
+            <Link href="/privacy" className="hover:text-blue-500 hover:underline">
+              Privacy Policy
+            </Link>
+            <span>•</span>
+            <Link href="/cancellation-and-refund" className="hover:text-blue-500 hover:underline">
+              Cancellation & Refund
+            </Link>
+            <span>•</span>
+            <Link href="/shipping-and-exchange" className="hover:text-blue-500 hover:underline">
+              Shipping & Exchange
+            </Link>
+            <span>•</span>
+            <Link href="/contact-us" className="hover:text-blue-500 hover:underline">
+              Contact Us
+            </Link>
+          </div>
         </div>
       </div>
     </div>
