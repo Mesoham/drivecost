@@ -10,7 +10,7 @@ import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { updateUserSettings, setDynamicAlert } = useAppStore();
+  const { updateUserSettings, setDynamicAlert, vehicles, settings } = useAppStore();
   const [googleLoading, setGoogleLoading] = useState(false);
 
   // 1-Click Clean Google Authentication via official on-device Google chooser
@@ -42,7 +42,14 @@ export default function LoginPage() {
         color: '#0071e3'
       });
 
-      router.push('/dashboard');
+      // Strict user routing sequence:
+      // 1. If user has 0 vehicles registered, redirect directly to /onboarding page first
+      // 2. Only if user already has at least one vehicle registered, skip to /dashboard
+      if (vehicles.length === 0) {
+        router.push('/onboarding');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err: any) {
       console.error('Google Sign-In Error:', err);
       if (err?.code !== 'auth/popup-closed-by-user') {
