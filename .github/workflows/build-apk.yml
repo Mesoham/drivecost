@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/build-apk.yml'
       - 'public/manifest.json'
+      - 'public/icon-512.png'
   workflow_dispatch:
 
 permissions:
@@ -71,8 +72,8 @@ jobs:
               "path": "./android.keystore",
               "alias": "drivecost"
             },
-            "appVersionName": "1.0.0",
-            "appVersionCode": 1,
+            "appVersionName": "1.0.1",
+            "appVersionCode": 2,
             "shortcuts": [],
             "generatorApp": "bubblewrap-cli",
             "fallbackType": "customtabs",
@@ -97,6 +98,9 @@ jobs:
           mkdir -p "$HOME/.bubblewrap/android_sdk/licenses"
           printf "\n24333f8a63b6825ea9c5514f83c2829b004d1fee\nd56f5187479451eabf01fb78af6dfcb131a6481e\n8933bad161af4178b1185d1a37fbf41ea5269c55\n" > "$HOME/.bubblewrap/android_sdk/licenses/android-sdk-license"
           yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root="$HOME/.bubblewrap/android_sdk" --licenses >/dev/null 2>&1 || true
+          echo "Waiting 60s for Vercel to finish deploying updated icon-512.png..."
+          sleep 60
+          yes | bubblewrap update --skipPwaValidation || true
           bubblewrap build --skipPwaValidation
 
       - name: Rename and Publish DriveCost.apk to GitHub Release
