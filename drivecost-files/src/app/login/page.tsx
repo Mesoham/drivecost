@@ -11,7 +11,8 @@ import { GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectRes
 
 export default function LoginPage() {
   const router = useRouter();
-  const { switchUserAccount, setDynamicAlert } = useAppStore();
+  const { switchUserAccount, setDynamicAlert, settings } = useAppStore();
+  const logoSrc = settings?.theme === 'light' ? '/drivecost-logo.svg' : '/drivecost-logo-dark.svg';
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const completeLogin = async (user: any) => {
@@ -122,7 +123,7 @@ export default function LoginPage() {
         <div className="text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/drivecost-logo.svg"
+            src={logoSrc}
             alt="DriveCost"
             width={360}
             height={100}

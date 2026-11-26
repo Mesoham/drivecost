@@ -263,7 +263,7 @@ export function Navigation() {
           <Link href="/dashboard" className="flex items-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/drivecost-logo.svg"
+              src={settings?.theme === 'light' ? '/drivecost-logo.svg' : '/drivecost-logo-dark.svg'}
               alt="DriveCost"
               width={360}
               height={100}
@@ -305,7 +305,7 @@ export function Navigation() {
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src="/drivecost-logo.svg"
+                    src="/drivecost-logo-dark.svg"
                     alt="DriveCost"
                     width={360}
                     height={100}

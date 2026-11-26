@@ -89,10 +89,6 @@
         animation: none;
       }
     }
-    @media (prefers-color-scheme: dark) {
-      svg { --accent: #75b9ff; --warning: #ff6478; }
-      .wordmark { fill: #f0f6ff; }
-    }
   </style>
 
   <defs>

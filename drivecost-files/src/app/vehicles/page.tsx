@@ -18,6 +18,15 @@ import {
   Trash2
 } from 'lucide-react';
 
+function getBadgeColors(rawColor?: string): { bg: string; isLight: boolean } {
+  const hex = rawColor && /^#[0-9a-fA-F]{6}$/.test(rawColor) ? rawColor : '#0071e3';
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return { bg: hex, isLight: luminance > 0.65 };
+}
+
 export default function VehiclesPage() {
   const { vehicles, expenses, reminders, settings, setProModalOpen, deleteVehicle } = useAppStore();
   const [vehicleToDelete, setVehicleToDelete] = useState<{ id: string; name: string } | null>(null);
@@ -74,10 +83,10 @@ export default function VehiclesPage() {
       {isFreeTierLimitReached && (
         <div className="apple-glass p-5 border border-purple-500/30 flex items-center justify-between gap-4">
           <div>
-            <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
-              <Sparkles className="h-4 w-4 text-purple-400" /> Need more than 1 vehicle?
+            <h4 className="text-sm font-bold daylight-text-main flex items-center gap-1.5">
+              <Sparkles className="h-4 w-4 text-purple-500" /> Need more than 1 vehicle?
             </h4>
-            <p className="text-xs text-slate-300 mt-1">
+            <p className="text-xs daylight-text-muted mt-1">
               DriveCost Pro allows unlimited vehicles, digital document vaults, and export tax summaries for ₹74/month or ₹749/year (25% Off).
             </p>
           </div>
@@ -97,6 +106,7 @@ export default function VehiclesPage() {
           const vehReminders = reminders.filter(r => r.vehicleId === v.id && r.status !== 'completed');
           const hasOverdue = vehReminders.some(r => r.status === 'overdue');
           const hasDueSoon = vehReminders.some(r => r.status === 'due_soon');
+          const badgeColors = getBadgeColors(v.color);
 
           return (
             <Card key={v.id} className="relative overflow-hidden flex flex-col justify-between">
@@ -105,8 +115,8 @@ export default function VehiclesPage() {
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex items-center gap-3">
                     <div 
-                      className="h-11 w-11 rounded-2xl flex items-center justify-center text-white shadow-md"
-                      style={{ backgroundColor: v.color || '#0071e3' }}
+                      className={`h-11 w-11 rounded-2xl flex items-center justify-center shadow-md border border-black/10 dark:border-white/15 shrink-0 ${badgeColors.isLight ? 'text-slate-900' : 'text-white'}`}
+                      style={{ backgroundColor: badgeColors.bg }}
                     >
                       {v.type === 'Bike' || v.type === 'Scooter' ? (
                         <Bike className="h-6 w-6" />

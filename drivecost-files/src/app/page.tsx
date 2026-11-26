@@ -49,7 +49,7 @@ export default function RootPage() {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/drivecost-logo.svg"
+              src="/drivecost-logo-dark.svg"
               alt="DriveCost"
               width={360}
               height={100}
