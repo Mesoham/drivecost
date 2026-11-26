@@ -94,7 +94,7 @@ export default function PricingPaymentPage() {
     }, 1200);
   };
 
-  // Razorpay Live Checkout
+  // Razorpay Live Subscription (AutoPay) Checkout
   const handleRazorpayPayment = async () => {
     setIsProcessingPayment(true);
 
@@ -103,20 +103,32 @@ export default function PricingPaymentPage() {
         throw new Error('Razorpay Checkout is still loading. Please wait a moment and try again.');
       }
 
-      const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_U4ivPakHil43Dj';
+      const subRes = await fetch('/api/razorpay/subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          billingCycle,
+          isOfferActivated,
+          email: settings?.userAuth?.identifier || '',
+        }),
+      });
+
+      const subData = await subRes.json();
+      if (!subRes.ok || !subData?.subscription_id) {
+        throw new Error(subData?.error || 'Could not initialize Razorpay subscription.');
+      }
 
       const options: any = {
-        key: razorpayKey,
-        amount: currentPrice * 100,
-        currency: 'INR',
+        key: subData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_U4ivPakHil43Dj',
+        subscription_id: subData.subscription_id,
         name: 'DriveCost Pro',
-        description: `${billingCycle === 'yearly' ? 'Annual' : 'Monthly'} Pro Subscription`,
+        description: `${billingCycle === 'yearly' ? 'Annual' : 'Monthly'} Pro Subscription (AutoPay)`,
         image: '/icon.svg',
-        retry: { enabled: true },
         handler: async function (response: any) {
           setIsProcessingPayment(false);
-          if (response.razorpay_payment_id) {
-            await handleActivatePro('Razorpay', response.razorpay_payment_id);
+          const refId = response.razorpay_payment_id || response.razorpay_subscription_id;
+          if (refId) {
+            await handleActivatePro('Razorpay Subscription', refId);
           }
         },
         prefill: {
