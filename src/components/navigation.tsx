@@ -71,7 +71,7 @@ export function Navigation() {
   const secondaryLinks = [
     { label: 'Settings', href: '/settings', icon: Settings },
     ...(!isStandaloneApp
-      ? [{ label: 'Download the app', href: 'https://github.com/Mesoham/drivecost/releases/latest/download/DriveCost.apk', icon: Download, externalDownload: true }]
+      ? [{ label: 'Download for Android', href: 'https://github.com/Mesoham/drivecost/releases/latest/download/DriveCost.apk', icon: Download, externalDownload: true }]
       : []),
     { label: 'FAQ', href: '/faq', icon: HelpCircle },
     { label: 'Privacy Policy', href: '/privacy', icon: ShieldCheck },
@@ -369,6 +369,20 @@ export function Navigation() {
               <Download className="h-4 w-4" />
               <span>Download DriveCost.apk</span>
             </a>
+
+            <div className="pt-3 border-t border-white/10 space-y-2">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Using iOS, Windows, Mac or Linux?
+              </div>
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 space-y-1.5 text-[11px] text-slate-300 leading-relaxed">
+                <p>
+                  <strong className="text-blue-400">iPhone / iPad (Safari):</strong> Tap the <strong>Share</strong> icon (↑) → <strong>Add to Home Screen</strong>.
+                </p>
+                <p>
+                  <strong className="text-purple-400">Windows / Mac / Linux (Chrome or Edge):</strong> Click the <strong>Install</strong> icon in the address bar (or Menu ⋮ → <strong>Install DriveCost</strong>).
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       )}
