@@ -120,14 +120,15 @@ export default function LoginPage() {
       <div className="w-full max-w-md mx-auto space-y-6">
         {/* Brand header */}
         <div className="text-center">
-          <div className="h-16 w-16 rounded-3xl mx-auto flex items-center justify-center p-1.5 shadow-xl mb-4 transition-all duration-500 border border-white/20 shadow-blue-500/25 bg-slate-900 overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icon.svg" alt="DriveCost Logo" className="w-full h-full object-contain" />
-          </div>
-          <h1 className="text-3xl font-extrabold tracking-tight daylight-text-main">
-            DriveCost
-          </h1>
-          <p className="daylight-text-muted mt-1.5 text-sm font-medium">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/drivecost-logo.svg"
+            alt="DriveCost"
+            width={360}
+            height={100}
+            className="h-14 sm:h-16 w-auto mx-auto aspect-[360/100] object-contain mb-3"
+          />
+          <p className="daylight-text-muted mt-1 text-sm font-medium">
             Know what your vehicle really costs.
           </p>
         </div>
