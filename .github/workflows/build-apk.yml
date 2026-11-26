@@ -84,7 +84,7 @@ jobs:
             "isChromeOSOnly": false,
             "isMetaQuest": false,
             "fullScopeUrl": "https://drivecost-nine.vercel.app/",
-            "minSdkVersion": 21,
+            "minSdkVersion": 24,
             "orientation": "default"
           }
           EOF
