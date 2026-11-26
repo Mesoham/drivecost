@@ -110,8 +110,8 @@ export function Navigation() {
 
       {/* Secondary & System Links */}
       <div className="pt-6 border-t border-black/8 dark:border-white/8 space-y-3">
-        {/* Pro Upgrade Floating Button in Sidebar */}
-        {settings?.isProUser ? (
+        {/* Pro Upgrade Floating Button in Sidebar (hidden in read-only Demo Mode) */}
+        {!settings?.isDemoMode && (settings?.isProUser ? (
           <button
             type="button"
             onClick={() => {
@@ -155,7 +155,7 @@ export function Navigation() {
               Activate Pro mode
             </p>
           </Link>
-        )}
+        ))}
 
         {/* Secondary Links (Settings, FAQ, Privacy & Security, Download) */}
         <div className="space-y-1 relative">

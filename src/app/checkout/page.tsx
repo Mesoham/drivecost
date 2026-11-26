@@ -155,6 +155,23 @@ export default function PricingPaymentPage() {
     }
   };
 
+  if (settings?.isDemoMode) {
+    return (
+      <div className="min-h-screen flex flex-col justify-center items-center p-4 relative z-10">
+        <div className="apple-glass max-w-md w-full p-8 text-center space-y-4">
+          <Sparkles className="h-8 w-8 text-purple-500 mx-auto" />
+          <h1 className="text-xl font-extrabold daylight-text-main">Demo Mode Active</h1>
+          <p className="text-xs daylight-text-muted">
+            Purchases and checkout are disabled in Demo Mode. Reset your account or sign in to a live garage to upgrade to Pro.
+          </p>
+          <Button type="button" onClick={() => router.push('/settings')} className="w-full text-xs font-bold">
+            Back to Settings
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col justify-center items-center p-4 relative z-10 transition-colors duration-500 py-10">
       {/* Top Bar with dynamic Back button */}

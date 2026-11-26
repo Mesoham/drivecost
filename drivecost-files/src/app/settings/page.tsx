@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/ca
 import { Button } from '@/components/ui/button';
 import { exportDataToJSON, restoreDataFromJSON } from '@/lib/backup';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { auth } from '@/lib/firebase';
 import { 
   Download, 
   Upload, 
@@ -131,7 +132,7 @@ export default function SettingsPage() {
         </div>
       </Card>
 
-      {/* SECTION 2: Clean Consolidated Notifications */}
+      {/* SECTION 2: Clean Consolidated Email Notifications */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -139,37 +140,31 @@ export default function SettingsPage() {
             <span>Notifications</span>
           </CardTitle>
           <CardDescription>
-            Manage push notification alerts and reminder timeline in one place
+            Manage email notification alerts and reminder timeline in one place
           </CardDescription>
         </CardHeader>
 
         <div className="space-y-4">
-          {/* Dropdown 1: Notification Channel */}
+          {/* Dropdown 1: Notification Channel (Email Only) */}
           <div className="flex items-center justify-between gap-4 py-2 border-b border-black/5 dark:border-white/5">
             <div>
               <div className="text-sm font-semibold daylight-text-main">Notification Type</div>
-              <div className="text-xs daylight-text-muted">Browser push alerts for upcoming due dates</div>
+              <div className="text-xs daylight-text-muted">
+                Email alerts to{' '}
+                <span className="font-semibold daylight-text-main">
+                  {settings?.userAuth?.identifier || auth.currentUser?.email || 'your signed-in email'}
+                </span>
+              </div>
             </div>
             <select
               value={
-                (settings?.enableBrowserNotifications || settings?.notificationPreferences?.channels?.push)
-                  ? 'push'
+                (settings?.notificationPreferences?.channels?.email ?? true)
+                  ? 'email'
                   : 'off'
               }
               onChange={async (e) => {
-                const mode = e.target.value as 'push' | 'off';
-                if (mode === 'push' && typeof window !== 'undefined' && 'Notification' in window) {
-                  const perm = await Notification.requestPermission();
-                  if (perm === 'denied') {
-                    setDynamicAlert({
-                      title: 'Browser Permission Blocked',
-                      subtitle: 'Please allow notifications in your browser site settings.',
-                      icon: 'check',
-                      color: '#ef4444'
-                    });
-                    return;
-                  }
-                }
+                const mode = e.target.value as 'email' | 'off';
+                const targetEmail = settings?.userAuth?.identifier || auth.currentUser?.email || '';
                 const duePrefs = settings?.notificationPreferences?.categories?.dueReminders || {
                   enabled: true,
                   notify7Days: true,
@@ -177,12 +172,13 @@ export default function SettingsPage() {
                   notify1Day: true
                 };
                 await updateUserSettings({
-                  enableBrowserNotifications: mode === 'push',
+                  enableBrowserNotifications: false,
                   notificationPreferences: {
                     channels: {
-                      push: mode === 'push',
-                      email: false
+                      push: false,
+                      email: mode === 'email'
                     },
+                    emailAddress: targetEmail,
                     categories: {
                       dueReminders: duePrefs,
                       generalReminders: { enabled: true }
@@ -190,21 +186,23 @@ export default function SettingsPage() {
                   }
                 });
                 setDynamicAlert({
-                  title: mode === 'push' ? 'Push Notifications Enabled' : 'Notifications Turned Off',
-                  subtitle: mode === 'push' ? 'You will receive browser alerts for due reminders.' : 'All reminder alerts are muted.',
+                  title: mode === 'email' ? 'Email Notifications Enabled' : 'Notifications Turned Off',
+                  subtitle: mode === 'email'
+                    ? `Reminders configured for ${targetEmail || 'your account email'}.`
+                    : 'All reminder alerts are muted.',
                   icon: 'check',
                   color: '#0071e3'
                 });
               }}
               className="text-xs font-semibold rounded-xl apple-glass px-3 py-2 daylight-text-main focus:outline-none cursor-pointer"
             >
-              <option value="push">Push Notifications</option>
+              <option value="email">Email Notifications</option>
               <option value="off">Off (Disabled)</option>
             </select>
           </div>
 
           {/* Dropdown 2: Reminder Timeline */}
-          <div className="flex items-center justify-between gap-4 py-2 border-b border-black/5 dark:border-white/5">
+          <div className="flex items-center justify-between gap-4 py-2">
             <div>
               <div className="text-sm font-semibold daylight-text-main">Reminder Timeline</div>
               <div className="text-xs daylight-text-muted">When to notify before insurance, PUC, or service due dates</div>
@@ -221,6 +219,7 @@ export default function SettingsPage() {
               })()}
               onChange={async (e) => {
                 const val = e.target.value as 'all' | '7' | '3' | '1';
+                const targetEmail = settings?.userAuth?.identifier || auth.currentUser?.email || '';
                 const dueReminders = {
                   enabled: true,
                   notify7Days: val === 'all' || val === '7',
@@ -231,9 +230,10 @@ export default function SettingsPage() {
                   advanceWarningDays: val === '1' ? 1 : val === '3' ? 3 : 7,
                   notificationPreferences: {
                     channels: {
-                      push: Boolean(settings?.enableBrowserNotifications || settings?.notificationPreferences?.channels?.push),
-                      email: false
+                      push: false,
+                      email: settings?.notificationPreferences?.channels?.email ?? true
                     },
+                    emailAddress: targetEmail,
                     categories: {
                       dueReminders,
                       generalReminders: { enabled: true }
@@ -255,54 +255,6 @@ export default function SettingsPage() {
               <option value="1">1 Day Before</option>
             </select>
           </div>
-
-          {/* Test Push Notification */}
-          <div className="flex items-center justify-between gap-4 pt-1">
-            <div>
-              <div className="text-sm font-semibold daylight-text-main">Test Push Notification</div>
-              <div className="text-xs daylight-text-muted">Verify browser alerts work on this device right now</div>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                if (typeof window === 'undefined' || !('Notification' in window)) {
-                  setDynamicAlert({
-                    title: 'Not Supported',
-                    subtitle: 'This browser does not support desktop push notifications.',
-                    icon: 'check',
-                    color: '#ef4444'
-                  });
-                  return;
-                }
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                  new Notification('DriveCost Test Alert 🚗', {
-                    body: 'Push notifications are working! You will be alerted for upcoming vehicle reminders.',
-                    icon: '/icon.svg'
-                  });
-                  setDynamicAlert({
-                    title: 'Test Notification Sent!',
-                    subtitle: 'Check your device notification banner.',
-                    icon: 'check',
-                    color: '#10b981'
-                  });
-                } else {
-                  setDynamicAlert({
-                    title: 'Permission Required',
-                    subtitle: 'Please allow notifications in your browser to receive push alerts.',
-                    icon: 'check',
-                    color: '#ef4444'
-                  });
-                }
-              }}
-              className="text-xs gap-1.5"
-            >
-              <Bell className="h-3.5 w-3.5 text-purple-500" />
-              <span>Send Test Alert</span>
-            </Button>
-          </div>
         </div>
       </Card>
 
@@ -310,7 +262,11 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Data Backup & Portability</CardTitle>
-          <CardDescription>Export or restore your garage records anytime.</CardDescription>
+          <CardDescription>
+            {settings?.isDemoMode
+              ? 'Downloads and backups are disabled in read-only Demo Mode.'
+              : 'Export or restore your garage records anytime.'}
+          </CardDescription>
         </CardHeader>
 
         <div className="space-y-4">
@@ -319,9 +275,14 @@ export default function SettingsPage() {
               <div className="text-sm font-semibold daylight-text-main">Full JSON Backup</div>
               <div className="text-xs daylight-text-muted">Saves all vehicles, logs, expenses and reminders in one file.</div>
             </div>
-            <Button size="sm" onClick={handleBackupJSON} className="gap-1.5 text-xs">
+            <Button
+              size="sm"
+              disabled={Boolean(settings?.isDemoMode)}
+              onClick={handleBackupJSON}
+              className="gap-1.5 text-xs"
+            >
               <Download className="h-4 w-4" />
-              <span>Download JSON Backup</span>
+              <span>{settings?.isDemoMode ? 'Disabled in Demo' : 'Download JSON Backup'}</span>
             </Button>
           </div>
 
@@ -330,10 +291,10 @@ export default function SettingsPage() {
               <div className="text-sm font-semibold daylight-text-main">Restore from Backup</div>
               <div className="text-xs daylight-text-muted">Restore your database from an existing DriveCost JSON file.</div>
             </div>
-            <label className="inline-flex items-center justify-center font-medium rounded-2xl h-9 px-3.5 text-xs gap-1.5 apple-glass cursor-pointer hover:opacity-80">
+            <label className={`inline-flex items-center justify-center font-medium rounded-2xl h-9 px-3.5 text-xs gap-1.5 apple-glass ${settings?.isDemoMode ? 'opacity-50 pointer-events-none' : 'cursor-pointer hover:opacity-80'}`}>
               <Upload className="h-4 w-4" />
               <span>Select File</span>
-              <input type="file" accept=".json" onChange={handleRestoreJSON} className="hidden" />
+              <input type="file" accept=".json" disabled={Boolean(settings?.isDemoMode)} onChange={handleRestoreJSON} className="hidden" />
             </label>
           </div>
 
@@ -349,28 +310,28 @@ export default function SettingsPage() {
       <Card className="border border-rose-500/20">
         <CardHeader>
           <CardTitle className="text-rose-500">Reset & Demo Data</CardTitle>
-          <CardDescription>Reload sample records or wipe local storage</CardDescription>
+          <CardDescription>Preview read-only sample data or delete your account</CardDescription>
         </CardHeader>
 
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <div>
               <div className="text-sm font-semibold daylight-text-main">Load Demo Data</div>
-              <div className="text-xs daylight-text-muted">Replaces database with sample Activa & Swift data</div>
+              <div className="text-xs daylight-text-muted">Read-only preview with sample Activa &amp; Swift data (no downloads or purchases)</div>
             </div>
-            <Button variant="outline" size="sm" onClick={() => loadDemoData()} className="text-xs gap-1.5">
+            <Button variant="outline" size="sm" onClick={() => loadDemoData()} className="text-xs gap-1.5 shrink-0">
               <Sparkles className="h-4 w-4 text-purple-400" />
               <span>Load Sample Data</span>
             </Button>
           </div>
 
-          <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between">
+          <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between gap-4">
             <div>
-              <div className="text-sm font-semibold text-rose-500">Clear All Local Data</div>
-              <div className="text-xs daylight-text-muted">Irreversibly deletes all vehicles and expenses</div>
+              <div className="text-sm font-semibold text-rose-500">Delete Your Account</div>
+              <div className="text-xs daylight-text-muted">Deletes all data and Pro payments, resetting you to a fresh free-tier account where Pro must be re-activated.</div>
             </div>
-            <Button variant="danger" size="sm" onClick={() => setShowClearModal(true)} className="text-xs">
-              Clear All Data
+            <Button variant="danger" size="sm" onClick={() => setShowClearModal(true)} className="text-xs shrink-0">
+              Delete Your Account
             </Button>
           </div>
         </div>
@@ -389,13 +350,16 @@ export default function SettingsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl apple-glass border border-red-500/20">
             <div>
               <div className="text-sm font-bold daylight-text-main flex items-center gap-2">
-                <span>{settings?.userAuth?.displayName || 'Active Driver'}</span>
+                <span>{settings?.userAuth?.displayName || auth.currentUser?.displayName || 'Active Driver'}</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 font-extrabold uppercase">
-                  {settings?.userAuth?.authMethod || 'Session Active'}
+                  {settings?.userAuth?.authMethod || 'Google'}
                 </span>
               </div>
               <div className="text-xs daylight-text-muted mt-0.5">
-                {settings?.userAuth?.identifier || 'Signed in to this device'}
+                Signed in to this device via{' '}
+                <span className="font-semibold daylight-text-main">
+                  {settings?.userAuth?.identifier || auth.currentUser?.email || 'your Google account'}
+                </span>
               </div>
             </div>
 
@@ -413,15 +377,15 @@ export default function SettingsPage() {
         </div>
       </Card>
 
-      {/* Clear Confirmation Modal */}
+      {/* Delete Account Confirmation Modal */}
       {showClearModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
           <div className="apple-glass rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl border border-rose-500/30">
             <h3 className="text-lg font-bold text-rose-500 flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" /> Type &quot;DELETE&quot; to Confirm
+              <AlertTriangle className="h-5 w-5" /> Delete Your Account
             </h3>
             <p className="text-xs daylight-text-sub leading-relaxed">
-              This will erase all vehicles, expenses, and reminders saved in this browser. To proceed, please type <strong>DELETE</strong> below:
+              This will permanently delete all your vehicles, expenses, reminders, and Pro payment status—resetting you to a fresh free-tier account. Type <strong>DELETE</strong> below to confirm:
             </p>
             <input
               type="text"
@@ -440,7 +404,7 @@ export default function SettingsPage() {
                 disabled={typedConfirmation.trim().toUpperCase() !== 'DELETE'}
                 onClick={handleClearDataConfirmed}
               >
-                Erase Everything
+                Delete Account
               </Button>
             </div>
           </div>

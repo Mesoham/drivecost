@@ -83,6 +83,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   cloudSyncEnabled: false,
   isProUser: false,
   hasSubscribedBefore: false,
+  isDemoMode: false,
   activeVehicleColor: '#0071e3',
   userAuth: {
     isLoggedIn: false

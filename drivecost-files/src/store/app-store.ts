@@ -210,7 +210,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isLoading: true });
     const db = getDb();
     await loadDemoDataIntoDB(db);
-    const updatedSettings = await updateSettings({ hasCompletedOnboarding: true });
+    const updatedSettings = await updateSettings({
+      hasCompletedOnboarding: true,
+      isDemoMode: true,
+      isProUser: false
+    });
     await get().initialize();
     set({ settings: updatedSettings });
   },
@@ -223,7 +227,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     await db.reminders.clear();
     await db.odometerLogs.clear();
     await db.documents.clear();
-    const settings = await updateSettings({ hasCompletedOnboarding: false, isProUser: false });
+    const settings = await updateSettings({
+      hasCompletedOnboarding: false,
+      isProUser: false,
+      hasSubscribedBefore: false,
+      isDemoMode: false
+    });
     set({
       vehicles: [],
       expenses: [],

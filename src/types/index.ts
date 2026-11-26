@@ -152,6 +152,7 @@ export interface UserSettings {
   cloudSyncEnabled: boolean;
   isProUser: boolean;
   hasSubscribedBefore?: boolean;
+  isDemoMode?: boolean;
   activeVehicleColor?: string;
   userAuth?: {
     isLoggedIn: boolean;
