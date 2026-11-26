@@ -105,16 +105,6 @@ export default function SettingsPage() {
             <ThemeToggle />
           </div>
 
-          <div className="flex items-center justify-between py-2 border-b border-black/5 dark:border-white/5">
-            <div>
-              <div className="text-sm font-semibold daylight-text-main">Default Currency</div>
-              <div className="text-xs daylight-text-muted">Indian Rupees (INR) with standard lakh formatting</div>
-            </div>
-            <span className="text-xs font-bold px-3 py-1.5 rounded-xl apple-glass">
-              ₹ INR
-            </span>
-          </div>
-
           <div className="flex items-center justify-between py-2">
             <div>
               <div className="text-sm font-semibold daylight-text-main">Mileage Metric</div>
