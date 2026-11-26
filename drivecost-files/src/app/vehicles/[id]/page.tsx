@@ -9,6 +9,8 @@ import { formatDateIndian } from '@/lib/utils';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ColorSpectrumPicker } from '@/components/color-spectrum-picker';
+import type { VehicleType, FuelType } from '@/types';
 import { 
   ArrowLeft, 
   Edit3, 
@@ -28,12 +30,66 @@ export default function VehicleDetailPage() {
   const router = useRouter();
   const id = params.id as string;
 
-  const { vehicles, expenses, reminders, deleteVehicle, updateVehicle } = useAppStore();
+  const { vehicles, expenses, reminders, deleteVehicle, updateVehicle, setDynamicAlert } = useAppStore();
   const vehicle = vehicles.find(v => v.id === id);
 
   const [isUpdatingOdo, setIsUpdatingOdo] = useState(false);
   const [newOdo, setNewOdo] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  const [editName, setEditName] = useState('');
+  const [editType, setEditType] = useState<VehicleType>('Bike');
+  const [editManufacturer, setEditManufacturer] = useState('');
+  const [editModel, setEditModel] = useState('');
+  const [editVariant, setEditVariant] = useState('');
+  const [editRegNumber, setEditRegNumber] = useState('');
+  const [editOdometer, setEditOdometer] = useState('');
+  const [editFuelType, setEditFuelType] = useState<FuelType>('Petrol');
+  const [editColor, setEditColor] = useState('#0071e3');
+
+  const openEditModal = () => {
+    if (!vehicle) return;
+    setEditName(vehicle.name || '');
+    setEditType(vehicle.type || 'Bike');
+    setEditManufacturer(vehicle.manufacturer || '');
+    setEditModel(vehicle.model || '');
+    setEditVariant(vehicle.variant || '');
+    setEditRegNumber(vehicle.registrationNumber || '');
+    setEditOdometer(String(vehicle.currentOdometer ?? 0));
+    setEditFuelType(vehicle.fuelType || 'Petrol');
+    setEditColor(vehicle.color || '#0071e3');
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!vehicle || !editName.trim() || !editManufacturer.trim() || !editModel.trim()) return;
+    setIsSavingEdit(true);
+    try {
+      await updateVehicle(vehicle.id, {
+        name: editName.trim(),
+        type: editType,
+        manufacturer: editManufacturer.trim(),
+        model: editModel.trim(),
+        variant: editVariant.trim() || undefined,
+        registrationNumber: editRegNumber.trim().toUpperCase() || undefined,
+        currentOdometer: Number(editOdometer) || 0,
+        fuelType: editFuelType,
+        color: editColor
+      });
+      setDynamicAlert({
+        title: 'Vehicle Updated!',
+        subtitle: `${editName.trim()} details saved.`,
+        icon: 'car',
+        color: editColor
+      });
+      setShowEditModal(false);
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
 
   if (!vehicle) {
     return (
@@ -99,6 +155,15 @@ export default function VehicleDetailPage() {
 
         <div className="flex items-center gap-2">
           <Button
+            variant="outline"
+            size="sm"
+            onClick={openEditModal}
+            className="gap-1.5 text-xs font-semibold cursor-pointer"
+          >
+            <Edit3 className="h-3.5 w-3.5" />
+            <span>Edit Details</span>
+          </Button>
+          <Button
             variant="ghost"
             size="icon"
             onClick={() => setShowDeleteConfirm(true)}
@@ -108,6 +173,168 @@ export default function VehicleDetailPage() {
           </Button>
         </div>
       </div>
+
+      {/* Edit Vehicle Details Modal (all onboarding fields + optional details) */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="apple-glass rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl border border-black/10 dark:border-white/15 my-8">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold daylight-text-main">Edit Vehicle Details</h3>
+              <button
+                type="button"
+                onClick={() => setShowEditModal(false)}
+                className="text-xs font-semibold daylight-text-muted hover:daylight-text-main cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <ColorSpectrumPicker
+                selectedColor={editColor}
+                onColorChange={(hex) => setEditColor(hex)}
+                surpriseUnlocked={false}
+              />
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider daylight-text-muted mb-1.5">
+                  Vehicle Type
+                </label>
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                  {(['Bike', 'Scooter', 'Car', 'EV', 'Commercial vehicle'] as VehicleType[]).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setEditType(t)}
+                      className={`py-2 px-1 text-center text-xs font-medium rounded-xl border transition-all cursor-pointer ${
+                        editType === t
+                          ? 'border-blue-500 bg-blue-600 text-white shadow-md'
+                          : 'apple-glass border-black/8 dark:border-white/10 daylight-text-sub hover:daylight-text-main'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider daylight-text-muted mb-1.5">
+                  Vehicle Nickname *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full rounded-2xl apple-glass px-4 py-2.5 text-sm font-semibold daylight-text-main focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider daylight-text-muted mb-1.5">
+                    Manufacturer *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editManufacturer}
+                    onChange={(e) => setEditManufacturer(e.target.value)}
+                    className="w-full rounded-2xl apple-glass px-4 py-2.5 text-sm daylight-text-main focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider daylight-text-muted mb-1.5">
+                    Model *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editModel}
+                    onChange={(e) => setEditModel(e.target.value)}
+                    className="w-full rounded-2xl apple-glass px-4 py-2.5 text-sm daylight-text-main focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider daylight-text-muted mb-1.5">
+                    Variant
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Optional"
+                    value={editVariant}
+                    onChange={(e) => setEditVariant(e.target.value)}
+                    className="w-full rounded-2xl apple-glass px-4 py-2.5 text-sm daylight-text-main focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider daylight-text-muted mb-1.5">
+                    Registration Number
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. WB02AB1234"
+                    value={editRegNumber}
+                    onChange={(e) => setEditRegNumber(e.target.value)}
+                    className="w-full rounded-2xl apple-glass px-4 py-2.5 text-sm uppercase daylight-text-main focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider daylight-text-muted mb-1.5">
+                    Current Odometer (km)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editOdometer}
+                    onChange={(e) => setEditOdometer(e.target.value)}
+                    className="w-full rounded-2xl apple-glass px-4 py-2.5 text-sm font-bold daylight-text-main focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider daylight-text-muted mb-1.5">
+                    Fuel Type
+                  </label>
+                  <select
+                    value={editFuelType}
+                    onChange={(e) => setEditFuelType(e.target.value as FuelType)}
+                    className="w-full rounded-2xl apple-glass px-4 py-2.5 text-sm font-semibold daylight-text-main focus:outline-none focus:ring-2 focus:ring-blue-500/40 cursor-pointer"
+                  >
+                    <option value="Petrol">Petrol</option>
+                    <option value="Diesel">Diesel</option>
+                    <option value="CNG">CNG</option>
+                    <option value="LPG">LPG</option>
+                    <option value="Electric">Electric</option>
+                    <option value="Hybrid">Hybrid</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowEditModal(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isSavingEdit || !editName.trim() || !editManufacturer.trim() || !editModel.trim()}
+                  className="text-white font-bold"
+                  style={{ backgroundColor: editColor }}
+                >
+                  {isSavingEdit ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (

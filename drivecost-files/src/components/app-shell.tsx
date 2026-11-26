@@ -120,7 +120,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div 
         className="vehicle-ambient-glow" 
         style={{
-          background: `radial-gradient(circle at 15% 15%, ${activeColor} 0%, transparent 55%), radial-gradient(circle at 85% 85%, #30d158 0%, transparent 50%)`
+          background: `radial-gradient(circle at 15% 15%, ${activeColor} 0%, transparent 55%), radial-gradient(circle at 85% 85%, ${activeColor} 0%, transparent 50%)`
         }}
       />
 
