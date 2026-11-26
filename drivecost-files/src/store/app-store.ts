@@ -112,7 +112,6 @@ export const useAppStore = create<AppState>((set, get) => ({
       ]);
 
       const activeVehicles = vehicles.filter(v => !v.archived);
-      const activeVeh = activeVehicles[0];
 
       set({
         vehicles: activeVehicles,
@@ -125,7 +124,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         documents: documents.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
         settings: {
           ...settings,
-          activeVehicleColor: activeVeh?.color || settings.activeVehicleColor || '#0071e3'
+          activeVehicleColor: '#0071e3'
         },
         isLoading: false,
         isInitialized: true
@@ -148,7 +147,6 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const settings = await updateSettings({ userAuth });
     const activeVehicles = vehicles.filter(v => !v.archived);
-    const activeVeh = activeVehicles[0];
 
     set({
       vehicles: activeVehicles,
@@ -162,7 +160,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       selectedVehicleId: 'all',
       settings: {
         ...settings,
-        activeVehicleColor: activeVeh?.color || settings.activeVehicleColor || '#0071e3'
+        activeVehicleColor: '#0071e3'
       },
       isLoading: false,
       isInitialized: true
@@ -192,17 +190,21 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setSelectedVehicleId: (id) => {
     set({ selectedVehicleId: id });
-    if (id !== 'all') {
-      const veh = get().vehicles.find(v => v.id === id);
-      if (veh?.color) {
-        get().updateUserSettings({ activeVehicleColor: veh.color });
-        get().setDynamicAlert({
-          title: `${veh.name} Connected`,
-          subtitle: `Ambient atmosphere adapted to vehicle color`,
-          icon: 'car',
-          color: veh.color
-        });
-      }
+    if (id === 'all') {
+      get().updateUserSettings({ activeVehicleColor: '#0071e3' });
+      return;
+    }
+    const veh = get().vehicles.find(v => v.id === id);
+    if (veh?.color) {
+      get().updateUserSettings({ activeVehicleColor: veh.color });
+      get().setDynamicAlert({
+        title: `${veh.name} Connected`,
+        subtitle: `Ambient atmosphere adapted to vehicle color`,
+        icon: 'car',
+        color: veh.color
+      });
+    } else {
+      get().updateUserSettings({ activeVehicleColor: '#0071e3' });
     }
   },
 

@@ -9,7 +9,7 @@ import { DynamicIsland } from '@/components/dynamic-island';
 import { usePathname } from 'next/navigation';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { initialize, settings, reminders, vehicles } = useAppStore();
+  const { initialize, settings, reminders, vehicles, selectedVehicleId } = useAppStore();
   const pathname = usePathname();
 
   useEffect(() => {
@@ -75,8 +75,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [settings?.theme]);
 
-  // Dynamically set CSS variables for reactive vehicle color
-  const activeColor = settings?.activeVehicleColor || '#0071e3';
+  // Dynamically set CSS variables for reactive vehicle color:
+  // Default theme color when 'All Vehicles' or no vehicle is selected;
+  // vehicle-specific color only when a specific vehicle with a color is selected.
+  const selectedVeh = selectedVehicleId !== 'all'
+    ? vehicles.find((v) => v.id === selectedVehicleId)
+    : undefined;
+  const activeColor = selectedVeh?.color || '#0071e3';
 
   useEffect(() => {
     document.documentElement.style.setProperty('--user-theme-accent', activeColor);
