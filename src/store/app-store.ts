@@ -4,6 +4,13 @@ import { getDb, getSettings, updateSettings, switchActiveUserDb, getActiveUserKe
 import { loadDemoDataIntoDB } from '@/lib/demo-data';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
+import {
+  syncDocToCloud,
+  deleteDocFromCloud,
+  syncSettingsToCloud,
+  pullUserCloudData,
+  wipeUserCloudData
+} from '@/lib/cloud-sync';
 
 interface DynamicAlertPayload {
   title: string;
@@ -138,14 +145,62 @@ export const useAppStore = create<AppState>((set, get) => ({
   switchUserAccount: async (userId, userAuth) => {
     set({ isLoading: true });
     const db = switchActiveUserDb(userId);
-    const [vehicles, expenses, reminders, documents] = await Promise.all([
+    const uid = userAuth.uid || auth.currentUser?.uid || '';
+
+    let [vehicles, expenses, reminders, documents] = await Promise.all([
       db.vehicles.toArray(),
       db.expenses.toArray(),
       db.reminders.toArray(),
       db.documents.toArray()
     ]);
 
-    const settings = await updateSettings({ userAuth });
+    let cloudSettings: Partial<UserSettings> | null = null;
+    if (uid) {
+      const cloud = await pullUserCloudData(uid);
+      if (cloud) {
+        cloudSettings = cloud.settings;
+
+        if (cloud.vehicles.length > 0) await db.vehicles.bulkPut(cloud.vehicles);
+        if (cloud.expenses.length > 0) await db.expenses.bulkPut(cloud.expenses);
+        if (cloud.reminders.length > 0) await db.reminders.bulkPut(cloud.reminders);
+        if (cloud.documents.length > 0) await db.documents.bulkPut(cloud.documents);
+
+        // Push any local-only records that didn't exist in cloud yet
+        const cloudVehIds = new Set(cloud.vehicles.map(v => v.id));
+        for (const v of vehicles) {
+          if (!cloudVehIds.has(v.id)) syncDocToCloud(uid, 'vehicles', v.id, v);
+        }
+        const cloudExpIds = new Set(cloud.expenses.map(e => e.id));
+        for (const e of expenses) {
+          if (!cloudExpIds.has(e.id)) syncDocToCloud(uid, 'expenses', e.id, e);
+        }
+        const cloudRemIds = new Set(cloud.reminders.map(r => r.id));
+        for (const r of reminders) {
+          if (!cloudRemIds.has(r.id)) syncDocToCloud(uid, 'reminders', r.id, r);
+        }
+        const cloudDocIds = new Set(cloud.documents.map(d => d.id));
+        for (const d of documents) {
+          if (!cloudDocIds.has(d.id)) syncDocToCloud(uid, 'documents', d.id, d);
+        }
+
+        [vehicles, expenses, reminders, documents] = await Promise.all([
+          db.vehicles.toArray(),
+          db.expenses.toArray(),
+          db.reminders.toArray(),
+          db.documents.toArray()
+        ]);
+      }
+    }
+
+    const settings = await updateSettings({
+      ...(cloudSettings || {}),
+      userAuth,
+      isDemoMode: false
+    });
+    if (uid) {
+      syncSettingsToCloud(uid, settings);
+    }
+
     const activeVehicles = vehicles.filter(v => !v.archived);
 
     set({
@@ -223,6 +278,10 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   clearAllData: async () => {
     set({ isLoading: true });
+    const uid = get().settings?.userAuth?.uid || auth.currentUser?.uid;
+    if (uid) {
+      await wipeUserCloudData(uid);
+    }
     const db = getDb();
     await db.vehicles.clear();
     await db.expenses.clear();
@@ -258,6 +317,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     };
     const db = getDb();
     await db.vehicles.add(vehicle);
+    const uid = get().settings?.userAuth?.uid || auth.currentUser?.uid;
+    if (uid && !get().settings?.isDemoMode) {
+      syncDocToCloud(uid, 'vehicles', vehicle.id, vehicle);
+    }
 
     if (vehicle.color) {
       await get().updateUserSettings({ activeVehicleColor: vehicle.color });
@@ -280,6 +343,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     const now = new Date().toISOString();
     const db = getDb();
     await db.vehicles.update(id, { ...updates, updatedAt: now });
+    const uid = get().settings?.userAuth?.uid || auth.currentUser?.uid;
+    if (uid && !get().settings?.isDemoMode) {
+      const updated = await db.vehicles.get(id);
+      if (updated) syncDocToCloud(uid, 'vehicles', id, updated);
+    }
     if (updates.color) {
       await get().updateUserSettings({ activeVehicleColor: updates.color });
     }
@@ -290,6 +358,14 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   deleteVehicle: async (id) => {
     const db = getDb();
+    const uid = get().settings?.userAuth?.uid || auth.currentUser?.uid;
+    if (uid && !get().settings?.isDemoMode) {
+      deleteDocFromCloud(uid, 'vehicles', id);
+      const exps = await db.expenses.where('vehicleId').equals(id).toArray();
+      const rems = await db.reminders.where('vehicleId').equals(id).toArray();
+      exps.forEach(e => deleteDocFromCloud(uid, 'expenses', e.id));
+      rems.forEach(r => deleteDocFromCloud(uid, 'reminders', r.id));
+    }
     await db.vehicles.delete(id);
     await db.expenses.where('vehicleId').equals(id).delete();
     await db.reminders.where('vehicleId').equals(id).delete();
@@ -322,6 +398,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     };
     const db = getDb();
     await db.expenses.add(expense);
+    const uid = get().settings?.userAuth?.uid || auth.currentUser?.uid;
+    if (uid && !get().settings?.isDemoMode) {
+      syncDocToCloud(uid, 'expenses', expense.id, expense);
+    }
 
     if (typeof expense.odometer === 'number' && expense.odometer > 0) {
       const vehicle = get().vehicles.find(v => v.id === expense.vehicleId);
@@ -340,6 +420,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     const now = new Date().toISOString();
     const db = getDb();
     await db.expenses.update(id, { ...updates, updatedAt: now });
+    const uid = get().settings?.userAuth?.uid || auth.currentUser?.uid;
+    if (uid && !get().settings?.isDemoMode) {
+      const updated = await db.expenses.get(id);
+      if (updated) syncDocToCloud(uid, 'expenses', id, updated);
+    }
     set(state => ({
       expenses: state.expenses.map(e => (e.id === id ? { ...e, ...updates, updatedAt: now } : e))
     }));
@@ -348,6 +433,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   deleteExpense: async (id) => {
     const db = getDb();
     await db.expenses.delete(id);
+    const uid = get().settings?.userAuth?.uid || auth.currentUser?.uid;
+    if (uid && !get().settings?.isDemoMode) {
+      deleteDocFromCloud(uid, 'expenses', id);
+    }
     set(state => ({
       expenses: state.expenses.filter(e => e.id !== id)
     }));
@@ -365,6 +454,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     };
     const db = getDb();
     await db.reminders.add(reminder);
+    const uid = get().settings?.userAuth?.uid || auth.currentUser?.uid;
+    if (uid && !get().settings?.isDemoMode) {
+      syncDocToCloud(uid, 'reminders', reminder.id, reminder);
+    }
     set(state => ({
       reminders: [...state.reminders, reminder]
     }));
@@ -375,6 +468,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     const now = new Date().toISOString();
     const db = getDb();
     await db.reminders.update(id, { ...updates, updatedAt: now });
+    const uid = get().settings?.userAuth?.uid || auth.currentUser?.uid;
+    if (uid && !get().settings?.isDemoMode) {
+      const updated = await db.reminders.get(id);
+      if (updated) syncDocToCloud(uid, 'reminders', id, updated);
+    }
     set(state => ({
       reminders: state.reminders.map(r => (r.id === id ? { ...r, ...updates, updatedAt: now } : r))
     }));
@@ -392,6 +490,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   deleteReminder: async (id) => {
     const db = getDb();
     await db.reminders.delete(id);
+    const uid = get().settings?.userAuth?.uid || auth.currentUser?.uid;
+    if (uid && !get().settings?.isDemoMode) {
+      deleteDocFromCloud(uid, 'reminders', id);
+    }
     set(state => ({
       reminders: state.reminders.filter(r => r.id !== id)
     }));
@@ -408,6 +510,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     };
     const db = getDb();
     await db.documents.add(document);
+    const uid = get().settings?.userAuth?.uid || auth.currentUser?.uid;
+    if (uid && !get().settings?.isDemoMode) {
+      syncDocToCloud(uid, 'documents', document.id, document);
+    }
     set(state => ({
       documents: [document, ...state.documents]
     }));
@@ -417,6 +523,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   deleteDocument: async (id) => {
     const db = getDb();
     await db.documents.delete(id);
+    const uid = get().settings?.userAuth?.uid || auth.currentUser?.uid;
+    if (uid && !get().settings?.isDemoMode) {
+      deleteDocFromCloud(uid, 'documents', id);
+    }
     set(state => ({
       documents: state.documents.filter(d => d.id !== id)
     }));
@@ -496,5 +606,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   updateUserSettings: async (updates) => {
     const nextSettings = await updateSettings(updates);
     set({ settings: nextSettings });
+    const uid = nextSettings.userAuth?.uid || auth.currentUser?.uid;
+    if (uid && !nextSettings.isDemoMode) {
+      syncSettingsToCloud(uid, nextSettings);
+    }
   }
 }));

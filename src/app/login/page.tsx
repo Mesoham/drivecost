@@ -18,6 +18,7 @@ export default function LoginPage() {
     const accountKey = user.email || user.uid;
     const { vehicles: userVehicles } = await switchUserAccount(accountKey, {
       isLoggedIn: true,
+      uid: user.uid,
       authMethod: 'google',
       identifier: user.email || '',
       displayName: user.displayName || 'DriveCost User'

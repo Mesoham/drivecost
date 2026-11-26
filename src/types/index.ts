@@ -156,6 +156,7 @@ export interface UserSettings {
   activeVehicleColor?: string;
   userAuth?: {
     isLoggedIn: boolean;
+    uid?: string;
     authMethod?: 'phone' | 'email' | 'google';
     identifier?: string;
     displayName?: string;
