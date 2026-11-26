@@ -14,6 +14,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     initialize();
+    if (typeof window !== 'undefined') {
+      const isApp =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.matchMedia('(display-mode: minimal-ui)').matches ||
+        (window.navigator as any).standalone === true ||
+        document.referrer.startsWith('android-app://');
+      if (isApp) {
+        sessionStorage.setItem('drivecost_is_apk', '1');
+      }
+    }
   }, [initialize]);
 
   // Trigger real browser Push Notifications for due/upcoming reminders

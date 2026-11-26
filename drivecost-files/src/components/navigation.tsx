@@ -40,10 +40,14 @@ export function Navigation() {
   // Detect if running inside the installed Android APK (TWA) or standalone PWA
   React.useEffect(() => {
     const standalone =
+      sessionStorage.getItem('drivecost_is_apk') === '1' ||
       window.matchMedia('(display-mode: standalone)').matches ||
       window.matchMedia('(display-mode: minimal-ui)').matches ||
       (window.navigator as any).standalone === true ||
       document.referrer.startsWith('android-app://');
+    if (standalone) {
+      sessionStorage.setItem('drivecost_is_apk', '1');
+    }
     setIsStandaloneApp(standalone);
   }, []);
 
