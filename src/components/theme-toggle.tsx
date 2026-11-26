@@ -5,7 +5,7 @@ import { Sun, Moon } from 'lucide-react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
 
-export function ThemeToggle() {
+export function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const { settings, updateUserSettings } = useAppStore();
   const currentTheme = settings?.theme || 'light';
   const isDark = currentTheme === 'dark';
@@ -48,28 +48,32 @@ export function ThemeToggle() {
       <button
         type="button"
         onClick={() => toggleTheme('light')}
-        className={`relative z-10 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors duration-250 cursor-pointer ${
+        title="Daylight Mode"
+        aria-label="Daylight Mode"
+        className={`relative z-10 flex items-center justify-center gap-1.5 ${compact ? 'px-2 py-1.5' : 'px-3 py-1.5 flex-1'} rounded-full text-xs font-bold transition-colors duration-250 cursor-pointer ${
           !isDark
             ? 'text-amber-600 drop-shadow-xs'
             : 'daylight-text-tertiary hover:daylight-text-sub'
         }`}
       >
         <Sun className="h-3.5 w-3.5 shrink-0" />
-        <span className="text-[11px] tracking-tight">Daylight</span>
+        {!compact && <span className="text-[11px] tracking-tight">Daylight</span>}
       </button>
 
       {/* Darkside Pill Option */}
       <button
         type="button"
         onClick={() => toggleTheme('dark')}
-        className={`relative z-10 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors duration-250 cursor-pointer ${
+        title="Darkside Mode"
+        aria-label="Darkside Mode"
+        className={`relative z-10 flex items-center justify-center gap-1.5 ${compact ? 'px-2 py-1.5' : 'px-3 py-1.5 flex-1'} rounded-full text-xs font-bold transition-colors duration-250 cursor-pointer ${
           isDark
             ? 'text-blue-400 drop-shadow-xs'
             : 'daylight-text-tertiary hover:daylight-text-sub'
         }`}
       >
         <Moon className="h-3.5 w-3.5 shrink-0" />
-        <span className="text-[11px] tracking-tight">Darkside</span>
+        {!compact && <span className="text-[11px] tracking-tight">Darkside</span>}
       </button>
     </div>
   );

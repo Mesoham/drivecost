@@ -26,6 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/app-store';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ThemeToggle } from './theme-toggle';
 
 export function Navigation() {
   const pathname = usePathname();
@@ -89,6 +90,11 @@ export function Navigation() {
     <div className="flex-1 flex flex-col justify-between overflow-y-auto px-4 py-6">
       {/* Main Navigation links */}
       <nav className="space-y-1.5 relative">
+        {/* Daylight / Darkside Toggle on top of Navigation */}
+        <div className="pb-3 mb-2 border-b border-black/8 dark:border-white/8 flex justify-center">
+          <ThemeToggle />
+        </div>
+
         <div className="px-3 pb-2 text-[11px] font-bold uppercase tracking-wider daylight-text-muted">
           Navigation
         </div>

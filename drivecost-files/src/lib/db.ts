@@ -85,6 +85,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   hasSubscribedBefore: false,
   isDemoMode: false,
   activeVehicleColor: '#0071e3',
+  lastSelectedVehicleId: 'all',
   userAuth: {
     isLoggedIn: false
   },

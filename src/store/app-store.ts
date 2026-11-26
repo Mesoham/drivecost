@@ -119,6 +119,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       ]);
 
       const activeVehicles = vehicles.filter(v => !v.archived);
+      const savedSelectedId = settings.lastSelectedVehicleId || 'all';
+      const matchedVeh = savedSelectedId !== 'all'
+        ? activeVehicles.find(v => v.id === savedSelectedId)
+        : undefined;
+      const restoredSelectedId = matchedVeh ? matchedVeh.id : 'all';
 
       set({
         vehicles: activeVehicles,
@@ -129,9 +134,11 @@ export const useAppStore = create<AppState>((set, get) => ({
           return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
         }),
         documents: documents.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+        selectedVehicleId: restoredSelectedId,
         settings: {
           ...settings,
-          activeVehicleColor: '#0071e3'
+          lastSelectedVehicleId: restoredSelectedId,
+          activeVehicleColor: matchedVeh?.color || '#0071e3'
         },
         isLoading: false,
         isInitialized: true
@@ -202,6 +209,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
 
     const activeVehicles = vehicles.filter(v => !v.archived);
+    const savedSelectedId = settings.lastSelectedVehicleId || 'all';
+    const matchedVeh = savedSelectedId !== 'all'
+      ? activeVehicles.find(v => v.id === savedSelectedId)
+      : undefined;
+    const restoredSelectedId = matchedVeh ? matchedVeh.id : 'all';
 
     set({
       vehicles: activeVehicles,
@@ -212,10 +224,11 @@ export const useAppStore = create<AppState>((set, get) => ({
         return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
       }),
       documents: documents.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
-      selectedVehicleId: 'all',
+      selectedVehicleId: restoredSelectedId,
       settings: {
         ...settings,
-        activeVehicleColor: '#0071e3'
+        lastSelectedVehicleId: restoredSelectedId,
+        activeVehicleColor: matchedVeh?.color || '#0071e3'
       },
       isLoading: false,
       isInitialized: true
@@ -246,12 +259,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSelectedVehicleId: (id) => {
     set({ selectedVehicleId: id });
     if (id === 'all') {
-      get().updateUserSettings({ activeVehicleColor: '#0071e3' });
+      get().updateUserSettings({ lastSelectedVehicleId: 'all', activeVehicleColor: '#0071e3' });
       return;
     }
     const veh = get().vehicles.find(v => v.id === id);
     if (veh?.color) {
-      get().updateUserSettings({ activeVehicleColor: veh.color });
+      get().updateUserSettings({ lastSelectedVehicleId: id, activeVehicleColor: veh.color });
       get().setDynamicAlert({
         title: `${veh.name} Connected`,
         subtitle: `Ambient atmosphere adapted to vehicle color`,
@@ -259,7 +272,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         color: veh.color
       });
     } else {
-      get().updateUserSettings({ activeVehicleColor: '#0071e3' });
+      get().updateUserSettings({ lastSelectedVehicleId: id, activeVehicleColor: '#0071e3' });
     }
   },
 

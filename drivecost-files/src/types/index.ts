@@ -154,6 +154,7 @@ export interface UserSettings {
   hasSubscribedBefore?: boolean;
   isDemoMode?: boolean;
   activeVehicleColor?: string;
+  lastSelectedVehicleId?: string;
   userAuth?: {
     isLoggedIn: boolean;
     uid?: string;
