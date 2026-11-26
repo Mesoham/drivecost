@@ -113,6 +113,25 @@ export default function NewVehiclePage() {
         color
       });
 
+      // Reset all fields so adding another vehicle starts completely blank
+      setName('');
+      setManufacturer('');
+      setModel('');
+      setVariant('');
+      setRegistrationNumber('');
+      setCurrentOdometer('');
+      setPurchasePrice('');
+      setPurchaseDate('');
+      setExpectedMileage('');
+      setTankCapacity('');
+      setInsuranceExpiryDate('');
+      setPucExpiryDate('');
+      setServiceDueDate('');
+      setServiceDueOdometer('');
+      setEmiAmount('');
+      setNotes('');
+      setErrorMsg('');
+
       router.push(`/vehicles/${newId}`);
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to save vehicle.');

@@ -172,6 +172,25 @@ function ExpenseFormInner() {
         chargingType: category === 'EV charging' ? chargingType : undefined
       });
 
+      // Reset all fields so adding another expense starts completely blank
+      setAmount('');
+      setDate(new Date().toISOString().slice(0, 16));
+      setMerchant('');
+      setOdometer('');
+      setNotes('');
+      setSelectedTags(['personal']);
+      setIsRecurring(false);
+      setFuelPricePerLitre('');
+      setFuelQuantityLitres('');
+      setIsFullTank(true);
+      setIsPartialFill(false);
+      setStationLocation('');
+      setUnitsConsumedKwh('');
+      setChargingType('Home');
+      setReceiptAttachment(undefined);
+      setReceiptName(undefined);
+      setErrorMsg('');
+
       router.push('/expenses');
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to record expense.');
