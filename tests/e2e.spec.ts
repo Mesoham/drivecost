@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('DriveLedger India Critical User Journey', () => {
+test.describe('DriveCost Critical User Journey', () => {
   test.setTimeout(60000);
 
   test('Complete flow: Add vehicle, two fuel refills, calculate verified mileage, add service, create reminder', async ({ page }) => {
@@ -18,7 +18,7 @@ test.describe('DriveLedger India Critical User Journey', () => {
 
     // Confirm dashboard has loaded with sample vehicles
     await expect(page).toHaveURL(/.*dashboard/);
-    await expect(page.locator('body')).toContainText('DriveLedger');
+    await expect(page.locator('body')).toContainText('DriveCost');
 
     // 2. Add New Vehicle
     await page.goto('/vehicles/new');

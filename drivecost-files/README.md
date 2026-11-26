@@ -1,4 +1,4 @@
-# DriveLedger India – Vehicle Expense Tracker
+# DriveCost – Vehicle Expense Tracker
 
 > **“Know exactly what your vehicle costs every month.”**
 
@@ -67,8 +67,8 @@ A mobile-first, local-first Progressive Web App (PWA) built specifically for Ind
 
 ### 1. Clone & Install Dependencies
 ```bash
-git clone <repo-url> driveledger-india
-cd driveledger-india
+git clone https://github.com/Mesoham/drivecost.git
+cd drivecost
 npm install
 ```
 
@@ -100,7 +100,7 @@ npm start
 
 ## ☁️ Deployment Guide
 
-DriveLedger India contains no proprietary server components and can be hosted for free on any static/serverless platform:
+DriveCost contains no proprietary server components and can be hosted for free on any static/serverless platform:
 
 ### Deploying to Vercel
 1. Push your repository to GitHub or GitLab.
@@ -132,4 +132,4 @@ DriveLedger India contains no proprietary server components and can be hosted fo
 
 - **Android (Chrome)**: Tap the 3-dots browser menu $\rightarrow$ **Install app** or **Add to Home Screen**.
 - **iOS (Safari)**: Tap the Share icon $\rightarrow$ **Add to Home Screen**.
-Once installed, DriveLedger opens in standalone full-screen mode without browser address bars and works seamlessly offline.
+Once installed, DriveCost opens in standalone full-screen mode without browser address bars and works seamlessly offline.
