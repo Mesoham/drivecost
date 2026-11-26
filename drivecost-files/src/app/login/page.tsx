@@ -1,61 +1,105 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/app-store';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { ShieldCheck, RefreshCw, Sparkles, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { auth } from '@/lib/firebase';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 
 export default function LoginPage() {
   const router = useRouter();
   const { switchUserAccount, setDynamicAlert } = useAppStore();
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  const completeLogin = async (user: any) => {
+    const accountKey = user.email || user.uid;
+    const { vehicles: userVehicles } = await switchUserAccount(accountKey, {
+      isLoggedIn: true,
+      authMethod: 'google',
+      identifier: user.email || '',
+      displayName: user.displayName || 'DriveCost User'
+    });
+
+    setDynamicAlert({
+      title: 'Signed in successfully! ✨',
+      subtitle: `Welcome, ${user.displayName || user.email}`,
+      icon: 'check',
+      color: '#0071e3'
+    });
+
+    if (userVehicles.length === 0) {
+      router.push('/onboarding');
+    } else {
+      router.push('/dashboard');
+    }
+  };
+
+  // Handle redirect-based Google Sign-In return
+  useEffect(() => {
+    let active = true;
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (active && result?.user) {
+          setGoogleLoading(true);
+          await completeLogin(result.user);
+        }
+      })
+      .catch((err: any) => {
+        console.error('Google Redirect Sign-In Error:', err);
+        if (active && err?.code !== 'auth/popup-closed-by-user') {
+          setDynamicAlert({
+            title: 'Google Sign-In Failed',
+            subtitle: err?.code ? `${err.code}: ${err.message}` : (err?.message || 'Please try again.'),
+            icon: 'check',
+            color: '#ff3b30'
+          });
+        }
+      })
+      .finally(() => {
+        if (active) setGoogleLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // 1-Click Clean Google Authentication via official on-device Google chooser
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({
+      prompt: 'select_account'
+    });
 
     try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({
-        prompt: 'select_account'
-      });
-
       const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      const accountKey = user.email || user.uid;
-
-      const { vehicles: userVehicles } = await switchUserAccount(accountKey, {
-        isLoggedIn: true,
-        authMethod: 'google',
-        identifier: user.email || '',
-        displayName: user.displayName || 'DriveCost User'
-      });
-
-      setDynamicAlert({
-        title: 'Signed in successfully! ✨',
-        subtitle: `Welcome, ${user.displayName || user.email}`,
-        icon: 'check',
-        color: '#0071e3'
-      });
-
-      // Strict user routing sequence:
-      // 1. If user has 0 vehicles registered, redirect directly to /onboarding page first
-      // 2. Only if user already has at least one vehicle registered, skip to /dashboard
-      if (userVehicles.length === 0) {
-        router.push('/onboarding');
-      } else {
-        router.push('/dashboard');
-      }
+      await completeLogin(result.user);
     } catch (err: any) {
       console.error('Google Sign-In Error:', err);
-      if (err?.code !== 'auth/popup-closed-by-user') {
+      const code = err?.code || '';
+
+      // Automatically fall back to full-page redirect if popup is blocked or unsupported
+      if (
+        code === 'auth/popup-blocked' ||
+        code === 'auth/cancelled-popup-request' ||
+        code === 'auth/operation-not-supported-in-this-environment'
+      ) {
+        try {
+          await signInWithRedirect(auth, provider);
+          return;
+        } catch (redirectErr: any) {
+          console.error('Google Redirect Fallback Error:', redirectErr);
+        }
+      }
+
+      if (code !== 'auth/popup-closed-by-user') {
         setDynamicAlert({
           title: 'Google Sign-In Failed',
-          subtitle: err.message || 'Please try again.',
+          subtitle: code ? `${code}: ${err.message}` : (err.message || 'Please try again.'),
           icon: 'check',
           color: '#ff3b30'
         });
