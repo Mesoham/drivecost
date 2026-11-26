@@ -29,7 +29,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export function Navigation() {
   const pathname = usePathname();
-  const { reminders, settings } = useAppStore();
+  const { reminders, settings, setDynamicAlert } = useAppStore();
   const [showCreatorModal, setShowCreatorModal] = React.useState(false);
   const [showEmailOptions, setShowEmailOptions] = React.useState(false);
   const [emailCopied, setEmailCopied] = React.useState(false);
@@ -111,23 +111,51 @@ export function Navigation() {
       {/* Secondary & System Links */}
       <div className="pt-6 border-t border-black/8 dark:border-white/8 space-y-3">
         {/* Pro Upgrade Floating Button in Sidebar */}
-        <Link
-          href="/checkout"
-          onClick={() => isMobile && setIsMobileMenuOpen(false)}
-          className="block w-full p-3.5 rounded-2xl apple-glass border border-purple-500/30 text-left transition-all hover:scale-[1.02] cursor-pointer"
-        >
-          <div className="flex items-center justify-between text-xs font-bold text-purple-600 dark:text-purple-400 mb-1">
-            <span className="flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5" /> DriveCost Pro
-            </span>
-            <span className="text-[9px] bg-purple-600 text-white px-1.5 py-0.5 rounded-full font-black">
-              PRO
-            </span>
-          </div>
-          <p className="text-[11px] daylight-text-muted leading-tight">
-            {settings?.isProUser ? 'Pro Plan Active' : 'Activate Pro mode'}
-          </p>
-        </Link>
+        {settings?.isProUser ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (isMobile) setIsMobileMenuOpen(false);
+              setDynamicAlert({
+                title: 'Yeh! You are already a PRO',
+                subtitle: 'Your DriveCost Pro plan is active.',
+                icon: 'pro',
+                color: '#a855f7'
+              });
+            }}
+            className="block w-full p-3.5 rounded-2xl apple-glass border border-purple-500/30 text-left transition-all hover:scale-[1.02] cursor-pointer"
+          >
+            <div className="flex items-center justify-between text-xs font-bold text-purple-600 dark:text-purple-400 mb-1">
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5" /> DriveCost Pro
+              </span>
+              <span className="text-[9px] bg-purple-600 text-white px-1.5 py-0.5 rounded-full font-black">
+                PRO
+              </span>
+            </div>
+            <p className="text-[11px] daylight-text-muted leading-tight">
+              Pro Plan Active
+            </p>
+          </button>
+        ) : (
+          <Link
+            href="/checkout"
+            onClick={() => isMobile && setIsMobileMenuOpen(false)}
+            className="block w-full p-3.5 rounded-2xl apple-glass border border-purple-500/30 text-left transition-all hover:scale-[1.02] cursor-pointer"
+          >
+            <div className="flex items-center justify-between text-xs font-bold text-purple-600 dark:text-purple-400 mb-1">
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5" /> DriveCost Pro
+              </span>
+              <span className="text-[9px] bg-purple-600 text-white px-1.5 py-0.5 rounded-full font-black">
+                PRO
+              </span>
+            </div>
+            <p className="text-[11px] daylight-text-muted leading-tight">
+              Activate Pro mode
+            </p>
+          </Link>
+        )}
 
         {/* Secondary Links (Settings, FAQ, Privacy & Security, Download) */}
         <div className="space-y-1 relative">
