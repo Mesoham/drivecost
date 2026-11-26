@@ -15,8 +15,8 @@ export function Header() {
   const dueRemindersCount = reminders.filter(r => r.status === 'due_soon' || r.status === 'overdue').length;
 
   return (
-    <header className="sticky top-0 z-30 apple-dock rounded-none border-x-0 border-t-0 border-b border-black/5 dark:border-white/10 pl-14 pr-3 py-2.5 md:px-8 md:py-3">
-      <div className="flex items-center justify-between gap-2 sm:gap-4 max-w-7xl mx-auto w-full">
+    <header className="sticky top-0 z-30 apple-dock rounded-none border-x-0 border-t-0 border-b border-black/5 dark:border-white/10 pl-14 pr-3 py-2 md:px-8 md:py-3">
+      <div className="flex items-center justify-between gap-2 sm:gap-4 max-w-7xl mx-auto w-full min-h-[36px]">
         {/* Vehicle Filter Selector Dropdown */}
         <div className="flex items-center gap-2 flex-1 md:flex-initial min-w-0">
           <label htmlFor="vehicle-select" className="text-xs font-semibold daylight-text-sub hidden sm:inline shrink-0">
@@ -27,7 +27,7 @@ export function Header() {
               id="vehicle-select"
               value={selectedVehicleId}
               onChange={(e) => setSelectedVehicleId(e.target.value)}
-              className="w-full sm:w-64 appearance-none rounded-2xl apple-glass px-3.5 py-2 text-xs font-bold daylight-text-main focus:outline-none focus:ring-2 focus:ring-blue-500/40 cursor-pointer shadow-xs truncate"
+              className="w-full sm:w-64 h-9 appearance-none rounded-2xl apple-glass px-3.5 text-xs font-bold daylight-text-main focus:outline-none focus:ring-2 focus:ring-blue-500/40 cursor-pointer shadow-xs truncate"
             >
               <option value="all">🚗 All Vehicles ({vehicles.length})</option>
               {vehicles.map((v) => (

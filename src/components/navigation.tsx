@@ -246,14 +246,14 @@ export function Navigation() {
   return (
     <>
       {/* Top Mobile Bar Toggle Header Button */}
-      <div className="md:hidden fixed top-3 left-3 z-50">
+      <div className="md:hidden fixed top-2 left-3 z-50">
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(true)}
-          className="p-2.5 rounded-2xl apple-glass shadow-lg border border-black/10 dark:border-white/15 text-slate-800 dark:text-slate-100 cursor-pointer flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+          className="h-9 w-9 rounded-2xl apple-glass shadow-lg border border-black/10 dark:border-white/15 text-slate-800 dark:text-slate-100 cursor-pointer flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
           aria-label="Open Navigation Menu"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-4 w-4" />
         </button>
       </div>
 
