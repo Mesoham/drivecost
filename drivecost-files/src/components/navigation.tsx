@@ -88,7 +88,7 @@ export function Navigation() {
 
   const secondaryLinks = [
     { label: 'Settings', href: '/settings', icon: Settings },
-    { label: 'Download the app', href: '#install-app', icon: Download, isInstall: true },
+    { label: 'Download the app', href: 'https://github.com/Mesoham/drivecost/releases/latest/download/app-release-signed.apk', icon: Download, externalDownload: true },
     { label: 'FAQ', href: '/faq', icon: HelpCircle },
     { label: 'Privacy Policy', href: '/privacy', icon: ShieldCheck },
     { label: 'Terms & Conditions', href: '/terms', icon: ShieldCheck },
@@ -195,20 +195,20 @@ export function Navigation() {
           {secondaryLinks.map((item: any) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
-            if (item.isInstall) {
+            if (item.externalDownload) {
               return (
-                <button
-                  key="install-app"
-                  type="button"
-                  onClick={() => {
-                    if (isMobile) setIsMobileMenuOpen(false);
-                    handleInstallAppClick();
-                  }}
+                <a
+                  key="download-apk"
+                  href={item.href}
+                  download="DriveCost.apk"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => isMobile && setIsMobileMenuOpen(false)}
                   className="w-full flex items-center gap-3 rounded-2xl px-3.5 py-2 text-xs font-semibold relative select-none transition-colors duration-200 daylight-text-muted hover:daylight-text-main hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
                 >
                   <Icon className="h-4 w-4 relative z-10 opacity-70" />
                   <span className="relative z-10">{item.label}</span>
-                </button>
+                </a>
               );
             }
             return (
