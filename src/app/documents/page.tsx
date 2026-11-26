@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useAppStore } from '@/store/app-store';
 import { Card } from '@/components/ui/card';
@@ -152,6 +152,40 @@ export default function DocumentsPage() {
     setNotes('');
   };
 
+  const [digiLockerError, setDigiLockerError] = useState<string | null>(null);
+  const [isSyncingDigiLocker, setIsSyncingDigiLocker] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const err = params.get('digilocker_error');
+    const connected = params.get('digilocker_connected');
+
+    if (err) {
+      const msg =
+        err === 'not_configured'
+          ? 'DigiLocker OAuth credentials (DIGILOCKER_CLIENT_ID & DIGILOCKER_CLIENT_SECRET) are not configured on the server yet.'
+          : `DigiLocker authorization failed: ${err}`;
+      setDigiLockerError(msg);
+      setDynamicAlert({
+        title: 'DigiLocker Connection Issue',
+        subtitle: msg,
+        icon: 'check',
+        color: '#ef4444'
+      });
+      window.history.replaceState({}, '', '/documents');
+    } else if (connected === '1') {
+      const vehId = selectedVehicleId !== 'all' ? selectedVehicleId : vehicles[0]?.id;
+      if (vehId) {
+        setIsSyncingDigiLocker(true);
+        importFromDigiLocker(vehId).finally(() => {
+          setIsSyncingDigiLocker(false);
+          window.history.replaceState({}, '', '/documents');
+        });
+      }
+    }
+  }, [vehicles, selectedVehicleId, importFromDigiLocker, setDynamicAlert]);
+
   const handleDigiLockerSync = () => {
     if (!settings?.isProUser) {
       setProModalOpen(true);
@@ -160,10 +194,16 @@ export default function DocumentsPage() {
 
     const vehId = selectedVehicleId !== 'all' ? selectedVehicleId : vehicles[0]?.id;
     if (!vehId) {
-      alert('Please add or select a vehicle first.');
+      setDynamicAlert({
+        title: 'Add a Vehicle First',
+        subtitle: 'Please add or select a vehicle before syncing DigiLocker documents.',
+        icon: 'car',
+        color: '#f59e0b'
+      });
       return;
     }
-    importFromDigiLocker(vehId);
+
+    window.location.href = '/api/digilocker/auth';
   };
 
   return (
@@ -224,6 +264,23 @@ export default function DocumentsPage() {
           </div>
         )}
       </div>
+
+      {/* DigiLocker Status / Error Banner */}
+      {digiLockerError && (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+          <div className="flex-1 text-xs daylight-text-main">
+            <p className="font-bold">DigiLocker Setup Required</p>
+            <p className="daylight-text-muted mt-0.5">{digiLockerError}</p>
+          </div>
+        </div>
+      )}
+
+      {isSyncingDigiLocker && (
+        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+          Fetching your verified documents from DigiLocker...
+        </div>
+      )}
 
       {/* DigiLocker Banner highlight */}
       {!settings?.isProUser && (

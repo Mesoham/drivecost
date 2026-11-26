@@ -6,11 +6,24 @@ import { Navigation } from '@/components/navigation';
 import { Header } from '@/components/header';
 import { ProUpgradeModal } from '@/components/pro-modal';
 import { DynamicIsland } from '@/components/dynamic-island';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+
+const PUBLIC_ROUTES = new Set([
+  '/',
+  '/login',
+  '/privacy',
+  '/terms',
+  '/cancellation-and-refund',
+  '/shipping-and-exchange',
+  '/contact-us',
+  '/faq',
+  '/help'
+]);
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { initialize, settings, reminders, vehicles, selectedVehicleId } = useAppStore();
+  const { initialize, isInitialized, settings, reminders, vehicles, selectedVehicleId } = useAppStore();
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     initialize();
@@ -97,10 +110,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     document.documentElement.style.setProperty('--user-theme-accent', activeColor);
   }, [activeColor]);
 
+  const isPublicRoute = PUBLIC_ROUTES.has(pathname || '/');
+  const isLoggedIn = Boolean(settings?.userAuth?.isLoggedIn);
+
+  useEffect(() => {
+    if (isInitialized && !isLoggedIn && !isPublicRoute) {
+      router.replace('/login');
+    }
+  }, [isInitialized, isLoggedIn, isPublicRoute, router]);
+
   const isSplash = pathname === '/';
   const isOnboarding = pathname === '/onboarding';
   const isLogin = pathname === '/login';
   const isCheckout = pathname === '/checkout';
+
+  if (!isPublicRoute && (!isInitialized || !isLoggedIn)) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#06080d] text-white">
+        <div className="h-8 w-8 rounded-full border-2 border-blue-500 border-t-transparent animate-spin mb-3" />
+        <p className="text-xs text-slate-400 font-medium">
+          {!isInitialized ? 'Loading DriveCost...' : 'Redirecting to Google Sign-In...'}
+        </p>
+      </div>
+    );
+  }
 
   if (isSplash || isOnboarding || isLogin || isCheckout) {
     return (

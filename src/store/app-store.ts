@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Vehicle, Expense, Reminder, UserSettings, VehicleDocument } from '@/types';
 import { getDb, getSettings, updateSettings, switchActiveUserDb, getActiveUserKey, DEFAULT_SETTINGS } from '@/lib/db';
-import { loadDemoDataIntoDB } from '@/lib/demo-data';
+import { DEMO_VEHICLES, DEMO_EXPENSES, DEMO_REMINDERS } from '@/lib/demo-data';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import {
@@ -41,6 +41,7 @@ interface AppState {
   logoutUser: () => Promise<void>;
   setSelectedVehicleId: (id: string | 'all') => void;
   loadDemoData: () => Promise<void>;
+  exitDemoMode: () => Promise<void>;
   clearAllData: () => Promise<void>;
 
   // Vehicle Actions
@@ -278,15 +279,46 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   loadDemoData: async () => {
     set({ isLoading: true });
-    const db = getDb();
-    await loadDemoDataIntoDB(db);
-    const updatedSettings = await updateSettings({
-      hasCompletedOnboarding: true,
-      isDemoMode: true,
-      isProUser: false
+    const currentSettings = get().settings || DEFAULT_SETTINGS;
+    set({
+      vehicles: DEMO_VEHICLES,
+      expenses: [...DEMO_EXPENSES].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+      reminders: [...DEMO_REMINDERS].sort((a, b) => {
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      }),
+      selectedVehicleId: 'all',
+      settings: {
+        ...currentSettings,
+        isDemoMode: true
+      },
+      isLoading: false,
+      isInitialized: true
+    });
+    get().setDynamicAlert({
+      title: 'Sample Data Mode Active',
+      subtitle: 'Previewing sample vehicles & expenses. Your real data is safe.',
+      icon: 'car',
+      color: '#8b5cf6'
+    });
+  },
+
+  exitDemoMode: async () => {
+    const currentSettings = get().settings || DEFAULT_SETTINGS;
+    set({
+      settings: {
+        ...currentSettings,
+        isDemoMode: false
+      }
     });
     await get().initialize();
-    set({ settings: updatedSettings });
+    get().setDynamicAlert({
+      title: 'Back to Real Data',
+      subtitle: 'Restored your personal garage & expense records.',
+      icon: 'check',
+      color: '#10b981'
+    });
   },
 
   clearAllData: async () => {
@@ -546,61 +578,44 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   importFromDigiLocker: async (vehicleId) => {
-    const veh = get().vehicles.find(v => v.id === vehicleId);
+    const veh = get().vehicles.find(v => v.id === vehicleId) || get().vehicles[0];
     if (!veh) return;
 
-    const now = new Date().toISOString();
-    const demoDocs: Omit<VehicleDocument, 'id'>[] = [
-      {
-        vehicleId,
-        title: `${veh.name} - Official RC`,
-        type: 'Registration Certificate (RC)',
-        fileName: `${veh.registrationNumber || 'VEHICLE'}_RC_DigiLocker.pdf`,
-        fileType: 'pdf',
-        fileData: 'data:application/pdf;base64,JVBERi0xLjQKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwgL0xlbmd0aCA1IDAgUiAvRmlsdGVyIC9GbGF0ZURlY29kZSA+PgpzdHJlYW0KeAErVAhUKC4pysxLV8hJTU7NyweKGBkaGpsYmptYGAIAJdMJnQplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKMzIKZW5kb2JqCg==',
-        fileSize: 425600,
-        documentNumber: veh.registrationNumber || 'DL01AB1234',
-        isDigiLockerVerified: true,
-        notes: 'Digitally verified & pulled from Ministry of Road Transport and Highways (MoRTH) via DigiLocker API.',
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        vehicleId,
-        title: `${veh.name} - Comprehensive Insurance`,
-        type: 'Insurance Policy',
-        fileName: `${veh.name.replace(/\s+/g, '_')}_Insurance_DigiLocker.pdf`,
-        fileType: 'pdf',
-        fileData: 'data:application/pdf;base64,JVBERi0xLjQKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwgL0xlbmd0aCA1IDAgUiAvRmlsdGVyIC9GbGF0ZURlY29kZSA+PgpzdHJlYW0KeAErVAhUKC4pysxLV8hJTU7NyweKGBkaGpsYmptYGAIAJdMJnQplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKMzIKZW5kb2JqCg==',
-        fileSize: 312400,
-        documentNumber: 'POL-984321-IN',
-        expiryDate: veh.insuranceExpiryDate || new Date(Date.now() + 180 * 86400000).toISOString().slice(0, 10),
-        isDigiLockerVerified: true,
-        notes: 'Digitally verified with General Insurance Council via DigiLocker.',
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        vehicleId,
-        title: `${veh.name} - PUC Certificate`,
-        type: 'PUC Certificate',
-        fileName: `${veh.name.replace(/\s+/g, '_')}_PUC_DigiLocker.pdf`,
-        fileType: 'pdf',
-        fileData: 'data:application/pdf;base64,JVBERi0xLjQKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwgL0xlbmd0aCA1IDAgUiAvRmlsdGVyIC9GbGF0ZURlY29kZSA+PgpzdHJlYW0KeAErVAhUKC4pysxLV8hJTU7NyweKGBkaGpsYmptYGAIAJdMJnQplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKMzIKZW5kb2JqCg==',
-        fileSize: 185000,
-        documentNumber: 'PUC-2026-90412',
-        expiryDate: veh.pucExpiryDate || new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10),
-        isDigiLockerVerified: true,
-        notes: 'Valid emission test compliance certificate issued by MoRTH authorised station.',
-        createdAt: now,
-        updatedAt: now
-      }
-    ];
+    const res = await fetch('/api/digilocker/documents');
+    const data = await res.json();
 
+    if (!res.ok) {
+      get().setDynamicAlert({
+        title: 'DigiLocker Sync Failed',
+        subtitle: data?.error || 'Could not fetch documents from DigiLocker.',
+        icon: 'check',
+        color: '#ef4444'
+      });
+      return;
+    }
+
+    const fetchedDocs = Array.isArray(data?.documents) ? data.documents : [];
+    if (fetchedDocs.length === 0) {
+      get().setDynamicAlert({
+        title: 'No Documents Found',
+        subtitle: 'No issued documents were returned by your DigiLocker account.',
+        icon: 'check',
+        color: '#f59e0b'
+      });
+      return;
+    }
+
+    const now = new Date().toISOString();
     const db = getDb();
-    for (const d of demoDocs) {
+    for (const doc of fetchedDocs) {
       const id = `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-      await db.documents.add({ ...d, id });
+      await db.documents.add({
+        ...doc,
+        id,
+        vehicleId: veh.id,
+        createdAt: now,
+        updatedAt: now
+      });
     }
 
     const allDocs = await db.documents.toArray();
@@ -610,7 +625,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     get().setDynamicAlert({
       title: 'DigiLocker Synced! 🇮🇳',
-      subtitle: `Successfully imported 3 verified documents for ${veh.name}`,
+      subtitle: `Imported ${fetchedDocs.length} verified document(s) from DigiLocker`,
       icon: 'check',
       color: '#34c759'
     });

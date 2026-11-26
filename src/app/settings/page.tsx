@@ -24,6 +24,7 @@ export default function SettingsPage() {
     settings, 
     updateUserSettings, 
     loadDemoData, 
+    exitDemoMode,
     clearAllData,
     logoutUser,
     setDynamicAlert
@@ -314,15 +315,35 @@ export default function SettingsPage() {
         </CardHeader>
 
         <div className="space-y-3">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="text-sm font-semibold daylight-text-main">Load Demo Data</div>
-              <div className="text-xs daylight-text-muted">Read-only preview with sample Activa &amp; Swift data (no downloads or purchases)</div>
+              <div className="text-sm font-semibold daylight-text-main">
+                {settings?.isDemoMode ? 'Sample Data Mode (Active)' : 'Preview Sample Data'}
+              </div>
+              <div className="text-xs daylight-text-muted">
+                Switch between sample Activa &amp; Swift data and your real personal garage data without losing anything.
+              </div>
             </div>
-            <Button variant="outline" size="sm" onClick={() => loadDemoData()} className="text-xs gap-1.5 shrink-0">
-              <Sparkles className="h-4 w-4 text-purple-400" />
-              <span>Load Sample Data</span>
-            </Button>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant={settings?.isDemoMode ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => loadDemoData()}
+                className="text-xs gap-1.5"
+              >
+                <Sparkles className="h-4 w-4 text-purple-400" />
+                <span>Sample Data</span>
+              </Button>
+              <Button
+                variant={!settings?.isDemoMode ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => exitDemoMode()}
+                disabled={!settings?.isDemoMode}
+                className="text-xs gap-1.5"
+              >
+                <span>Back to Real Data</span>
+              </Button>
+            </div>
           </div>
 
           <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between gap-4">
