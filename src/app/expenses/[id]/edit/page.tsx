@@ -170,6 +170,7 @@ export default function EditExpensePage({ params }: { params: Promise<{ id: stri
       router.push('/expenses');
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to update expense.');
+    } finally {
       setIsSubmitting(false);
     }
   };

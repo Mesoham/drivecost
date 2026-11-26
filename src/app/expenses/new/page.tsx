@@ -175,6 +175,7 @@ function ExpenseFormInner() {
       router.push('/expenses');
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to record expense.');
+    } finally {
       setIsSubmitting(false);
     }
   };

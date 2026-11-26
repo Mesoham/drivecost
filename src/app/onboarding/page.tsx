@@ -134,6 +134,7 @@ export default function OnboardingPage() {
       router.push('/dashboard');
     } catch (err) {
       console.error(err);
+    } finally {
       setIsSubmitting(false);
     }
   };

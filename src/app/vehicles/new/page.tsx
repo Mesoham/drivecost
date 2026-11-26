@@ -116,6 +116,7 @@ export default function NewVehiclePage() {
       router.push(`/vehicles/${newId}`);
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to save vehicle.');
+    } finally {
       setIsSubmitting(false);
     }
   };
