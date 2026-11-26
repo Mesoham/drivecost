@@ -154,16 +154,15 @@ export default function OnboardingPage() {
       <div className="w-full max-w-xl mx-auto">
         {/* Brand header */}
         <div className="text-center mb-8">
-          <div 
-            className="h-16 w-16 rounded-3xl mx-auto flex items-center justify-center text-3xl font-black shadow-xl mb-4 transition-all duration-500 text-white shadow-blue-500/25 border border-white/20"
-            style={{ backgroundColor: color }}
-          >
-            ₹
-          </div>
-          <h1 className="text-3xl font-extrabold tracking-tight daylight-text-main">
-            DriveCost
-          </h1>
-          <p className="daylight-text-muted mt-1.5 text-sm sm:text-base font-medium">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/drivecost-logo.svg"
+            alt="DriveCost"
+            width={360}
+            height={100}
+            className="h-14 sm:h-16 w-auto mx-auto aspect-[360/100] object-contain mb-3"
+          />
+          <p className="daylight-text-muted mt-1 text-sm sm:text-base font-medium">
             Know what your vehicle really costs.
           </p>
         </div>
