@@ -3,7 +3,7 @@ import type { Vehicle, Expense, Reminder, UserSettings, VehicleDocument } from '
 import { getDb, getSettings, updateSettings, switchActiveUserDb, getActiveUserKey, DEFAULT_SETTINGS } from '@/lib/db';
 import { DEMO_VEHICLES, DEMO_EXPENSES, DEMO_REMINDERS } from '@/lib/demo-data';
 import { auth } from '@/lib/firebase';
-import { signOut } from 'firebase/auth';
+import { signOut, onAuthStateChanged } from 'firebase/auth';
 import {
   syncDocToCloud,
   deleteDocFromCloud,
@@ -14,12 +14,62 @@ import {
 } from '@/lib/cloud-sync';
 
 let activeCloudUnsubscribe: (() => void) | null = null;
+let authListenerRegistered = false;
+let activeSyncedUid: string | null = null;
 
 function stopCloudSync() {
   if (activeCloudUnsubscribe) {
     activeCloudUnsubscribe();
     activeCloudUnsubscribe = null;
   }
+  activeSyncedUid = null;
+}
+
+async function syncAndSubscribe(uid: string, set: any, get: any) {
+  if (!uid || activeSyncedUid === uid) return;
+  activeSyncedUid = uid;
+
+  // 1. Two-way initial merge so local-only records are pushed to cloud before real-time listener starts
+  try {
+    const db = getDb();
+    const [localVehicles, localExpenses, localReminders, localDocuments] = await Promise.all([
+      db.vehicles.toArray(),
+      db.expenses.toArray(),
+      db.reminders.toArray(),
+      db.documents.toArray()
+    ]);
+
+    const cloud = await pullUserCloudData(uid);
+    if (cloud) {
+      const cloudVehIds = new Set(cloud.vehicles.map((v) => v.id));
+      const cloudExpIds = new Set(cloud.expenses.map((e) => e.id));
+      const cloudRemIds = new Set(cloud.reminders.map((r) => r.id));
+      const cloudDocIds = new Set(cloud.documents.map((d) => d.id));
+
+      for (const v of localVehicles) {
+        if (!cloudVehIds.has(v.id)) syncDocToCloud(uid, 'vehicles', v.id, v);
+      }
+      for (const e of localExpenses) {
+        if (!cloudExpIds.has(e.id)) syncDocToCloud(uid, 'expenses', e.id, e);
+      }
+      for (const r of localReminders) {
+        if (!cloudRemIds.has(r.id)) syncDocToCloud(uid, 'reminders', r.id, r);
+      }
+      for (const d of localDocuments) {
+        if (!cloudDocIds.has(d.id)) syncDocToCloud(uid, 'documents', d.id, d);
+      }
+
+      if (cloud.vehicles.length > 0) await db.vehicles.bulkPut(cloud.vehicles);
+      if (cloud.expenses.length > 0) await db.expenses.bulkPut(cloud.expenses);
+      if (cloud.reminders.length > 0) await db.reminders.bulkPut(cloud.reminders);
+      if (cloud.documents.length > 0) await db.documents.bulkPut(cloud.documents);
+    }
+  } catch (err) {
+    console.warn('Initial two-way cloud merge failed:', err);
+  }
+
+  // 2. Start real-time Firestore snapshot listeners
+  startCloudSync(uid, set, get);
 }
 
 function startCloudSync(uid: string, set: any, get: any) {
@@ -210,9 +260,19 @@ export const useAppStore = create<AppState>((set, get) => ({
         isInitialized: true
       });
 
-      const uid = settings.userAuth?.uid || auth.currentUser?.uid || '';
-      if (uid) {
-        startCloudSync(uid, set, get);
+      if (auth.currentUser?.uid) {
+        syncAndSubscribe(auth.currentUser.uid, set, get);
+      }
+
+      if (!authListenerRegistered) {
+        authListenerRegistered = true;
+        onAuthStateChanged(auth, (firebaseUser) => {
+          if (firebaseUser?.uid && getActiveUserKey() !== 'guest') {
+            syncAndSubscribe(firebaseUser.uid, set, get);
+          } else if (!firebaseUser) {
+            stopCloudSync();
+          }
+        });
       }
     } catch (err) {
       console.error('Failed to initialize local database:', err);
