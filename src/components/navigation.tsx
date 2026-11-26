@@ -88,7 +88,7 @@ export function Navigation() {
 
   const secondaryLinks = [
     { label: 'Settings', href: '/settings', icon: Settings },
-    { label: 'Download the app', href: 'https://github.com/Mesoham/drivecost/releases/latest/download/app-release-signed.apk', icon: Download, externalDownload: true },
+    { label: 'Download the app', href: 'https://github.com/Mesoham/drivecost/releases/latest/download/DriveCost.apk', icon: Download, externalDownload: true },
     { label: 'FAQ', href: '/faq', icon: HelpCircle },
     { label: 'Privacy Policy', href: '/privacy', icon: ShieldCheck },
     { label: 'Terms & Conditions', href: '/terms', icon: ShieldCheck },
@@ -197,18 +197,18 @@ export function Navigation() {
             const isActive = pathname === item.href;
             if (item.externalDownload) {
               return (
-                <a
+                <button
                   key="download-apk"
-                  href={item.href}
-                  download="DriveCost.apk"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => isMobile && setIsMobileMenuOpen(false)}
+                  type="button"
+                  onClick={() => {
+                    if (isMobile) setIsMobileMenuOpen(false);
+                    setShowInstallModal(true);
+                  }}
                   className="w-full flex items-center gap-3 rounded-2xl px-3.5 py-2 text-xs font-semibold relative select-none transition-colors duration-200 daylight-text-muted hover:daylight-text-main hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
                 >
                   <Icon className="h-4 w-4 relative z-10 opacity-70" />
                   <span className="relative z-10">{item.label}</span>
-                </a>
+                </button>
               );
             }
             return (
@@ -342,7 +342,7 @@ export function Navigation() {
         )}
       </AnimatePresence>
 
-      {/* Install DriveCost App Modal (PWA fallback when native prompt isn't available) */}
+      {/* Download DriveCost.apk Modal with Safe-Download Note */}
       {showInstallModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
           <div className="apple-glass max-w-sm w-full p-6 relative rounded-3xl border border-blue-500/30 shadow-2xl bg-slate-900/95 text-white space-y-4">
@@ -359,25 +359,32 @@ export function Navigation() {
                 <Download className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-base font-black text-white">Install DriveCost App</h3>
-                <p className="text-[11px] text-slate-400">Works offline on Android, iOS &amp; Desktop</p>
+                <h3 className="text-base font-black text-white">Download DriveCost.apk</h3>
+                <p className="text-[11px] text-slate-400">Official Android App (Signed &amp; Verified)</p>
               </div>
             </div>
 
-            <div className="space-y-2.5 text-xs text-slate-200">
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-                <div className="font-bold text-emerald-400 mb-0.5">Android (Chrome / Edge)</div>
-                <p className="text-[11px] text-slate-300">Tap the browser menu (⋮) → <strong>Install app</strong> or <strong>Add to Home screen</strong>.</p>
+            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-slate-200 leading-relaxed space-y-1.5">
+              <div className="font-bold text-emerald-400 flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4 shrink-0" />
+                <span>100% Safe to Download &amp; Install</span>
               </div>
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-                <div className="font-bold text-blue-400 mb-0.5">iPhone / iPad (Safari)</div>
-                <p className="text-[11px] text-slate-300">Tap the <strong>Share</strong> button (↑) → <strong>Add to Home Screen</strong>.</p>
-              </div>
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-                <div className="font-bold text-purple-400 mb-0.5">Windows / Mac (Chrome / Edge)</div>
-                <p className="text-[11px] text-slate-300">Click the <strong>Install</strong> icon in the address bar or browser menu.</p>
-              </div>
+              <p className="text-[11px] text-slate-300">
+                Quick heads-up: Android or Chrome might flash a &quot;File might be harmful&quot; warning only because this APK is downloaded directly instead of going through the Play Store toll booth yet. Zero trackers, zero shady stuff — just your garage in your pocket!
+              </p>
             </div>
+
+            <a
+              href="https://github.com/Mesoham/drivecost/releases/latest/download/DriveCost.apk"
+              download="DriveCost.apk"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setShowInstallModal(false)}
+              className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-black flex items-center justify-center gap-2 shadow-lg transition-transform hover:scale-[1.01] active:scale-[0.99]"
+            >
+              <Download className="h-4 w-4" />
+              <span>Download DriveCost.apk</span>
+            </a>
           </div>
         </div>
       )}

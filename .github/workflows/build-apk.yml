@@ -100,11 +100,14 @@ jobs:
           bubblewrap build --skipPwaValidation
 
       - name: Rename and Publish DriveCost.apk to GitHub Release
+        run: mv android-app/app-release-signed.apk android-app/DriveCost.apk
+
+      - name: Upload DriveCost.apk to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.0-apk
           name: DriveCost Android APK
           body: Signed Android APK for DriveCost (`https://drivecost-nine.vercel.app`).
-          files: android-app/app-release-signed.apk
+          files: android-app/DriveCost.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
