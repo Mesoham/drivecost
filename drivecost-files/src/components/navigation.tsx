@@ -76,7 +76,7 @@ export function Navigation() {
   const secondaryLinks = [
     { label: 'Settings', href: '/settings', icon: Settings },
     ...(!isStandaloneApp
-      ? [{ label: 'Download for Android', href: 'https://github.com/Mesoham/drivecost/releases/latest/download/DriveCost.apk', icon: Download, externalDownload: true }]
+      ? [{ label: 'Download the App', href: 'https://github.com/Mesoham/drivecost/releases/latest/download/DriveCost.apk', icon: Download, externalDownload: true }]
       : []),
     { label: 'FAQ', href: '/faq', icon: HelpCircle },
     { label: 'Privacy Policy', href: '/privacy', icon: ShieldCheck },
@@ -374,9 +374,12 @@ export function Navigation() {
 
             <div className="pt-3 border-t border-white/10 space-y-2">
               <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Using iOS, Windows, Mac or Linux?
+                Or Install Directly from Browser (No APK Needed)
               </div>
               <div className="p-3 rounded-2xl bg-white/5 border border-white/10 space-y-1.5 text-[11px] text-slate-300 leading-relaxed">
+                <p>
+                  <strong className="text-emerald-400">Android (Chrome / Edge):</strong> Tap the browser menu (⋮) → <strong>Install app</strong> or <strong>Add to Home screen</strong>.
+                </p>
                 <p>
                   <strong className="text-blue-400">iPhone / iPad (Safari):</strong> Tap the <strong>Share</strong> icon (↑) → <strong>Add to Home Screen</strong>.
                 </p>
