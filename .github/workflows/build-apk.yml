@@ -89,6 +89,8 @@ jobs:
           }
           EOF
 
+          unset ANDROID_SDK_ROOT
+          unset ANDROID_HOME
           export BUBBLEWRAP_KEYSTORE_PASSWORD=drivecost123
           export BUBBLEWRAP_KEY_PASSWORD=drivecost123
           yes | bubblewrap update --skipPwaValidation || true
