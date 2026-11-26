@@ -34,6 +34,36 @@ export function Navigation() {
   const [showEmailOptions, setShowEmailOptions] = React.useState(false);
   const [emailCopied, setEmailCopied] = React.useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [deferredPrompt, setDeferredPrompt] = React.useState<any>(null);
+  const [showInstallModal, setShowInstallModal] = React.useState(false);
+
+  // Capture native PWA install prompt when supported (Android Chrome, Desktop Chrome/Edge)
+  React.useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallAppClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDynamicAlert({
+          title: 'Installing DriveCost App 📲',
+          subtitle: 'Added to your device home screen / apps.',
+          icon: 'check',
+          color: '#10b981'
+        });
+      }
+      setDeferredPrompt(null);
+      return;
+    }
+    setShowInstallModal(true);
+  };
 
   // Close mobile drawer on route navigation
   React.useEffect(() => {
@@ -58,7 +88,7 @@ export function Navigation() {
 
   const secondaryLinks = [
     { label: 'Settings', href: '/settings', icon: Settings },
-    { label: 'Download the app', href: '/drivecost.apk', icon: Download, download: true },
+    { label: 'Download the app', href: '#install-app', icon: Download, isInstall: true },
     { label: 'FAQ', href: '/faq', icon: HelpCircle },
     { label: 'Privacy Policy', href: '/privacy', icon: ShieldCheck },
     { label: 'Terms & Conditions', href: '/terms', icon: ShieldCheck },
@@ -165,11 +195,26 @@ export function Navigation() {
           {secondaryLinks.map((item: any) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
+            if (item.isInstall) {
+              return (
+                <button
+                  key="install-app"
+                  type="button"
+                  onClick={() => {
+                    if (isMobile) setIsMobileMenuOpen(false);
+                    handleInstallAppClick();
+                  }}
+                  className="w-full flex items-center gap-3 rounded-2xl px-3.5 py-2 text-xs font-semibold relative select-none transition-colors duration-200 daylight-text-muted hover:daylight-text-main hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                >
+                  <Icon className="h-4 w-4 relative z-10 opacity-70" />
+                  <span className="relative z-10">{item.label}</span>
+                </button>
+              );
+            }
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                {...(item.download ? { download: 'DriveCost.apk', target: '_blank' } : {})}
                 onClick={() => isMobile && setIsMobileMenuOpen(false)}
                 className={cn(
                   'flex items-center gap-3 rounded-2xl px-3.5 py-2 text-xs font-semibold relative select-none transition-colors duration-200',
@@ -296,6 +341,46 @@ export function Navigation() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Install DriveCost App Modal (PWA fallback when native prompt isn't available) */}
+      {showInstallModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+          <div className="apple-glass max-w-sm w-full p-6 relative rounded-3xl border border-blue-500/30 shadow-2xl bg-slate-900/95 text-white space-y-4">
+            <button
+              type="button"
+              onClick={() => setShowInstallModal(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-white/10 text-slate-400 hover:text-white cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+                <Download className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-white">Install DriveCost App</h3>
+                <p className="text-[11px] text-slate-400">Works offline on Android, iOS &amp; Desktop</p>
+              </div>
+            </div>
+
+            <div className="space-y-2.5 text-xs text-slate-200">
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                <div className="font-bold text-emerald-400 mb-0.5">Android (Chrome / Edge)</div>
+                <p className="text-[11px] text-slate-300">Tap the browser menu (⋮) → <strong>Install app</strong> or <strong>Add to Home screen</strong>.</p>
+              </div>
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                <div className="font-bold text-blue-400 mb-0.5">iPhone / iPad (Safari)</div>
+                <p className="text-[11px] text-slate-300">Tap the <strong>Share</strong> button (↑) → <strong>Add to Home Screen</strong>.</p>
+              </div>
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                <div className="font-bold text-purple-400 mb-0.5">Windows / Mac (Chrome / Edge)</div>
+                <p className="text-[11px] text-slate-300">Click the <strong>Install</strong> icon in the address bar or browser menu.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Creator Profile Modal ("Who made this thing ?") */}
       {showCreatorModal && (
