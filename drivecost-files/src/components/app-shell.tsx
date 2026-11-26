@@ -109,7 +109,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row relative transition-colors duration-500">
+    <div className="min-h-screen flex flex-col md:flex-row relative transition-colors duration-500 overflow-x-hidden w-full">
       {/* Apple Dynamic Island Notification Capsule */}
       <DynamicIsland />
 

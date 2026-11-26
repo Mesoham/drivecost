@@ -34,36 +34,18 @@ export function Navigation() {
   const [showEmailOptions, setShowEmailOptions] = React.useState(false);
   const [emailCopied, setEmailCopied] = React.useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
-  const [deferredPrompt, setDeferredPrompt] = React.useState<any>(null);
   const [showInstallModal, setShowInstallModal] = React.useState(false);
+  const [isStandaloneApp, setIsStandaloneApp] = React.useState(false);
 
-  // Capture native PWA install prompt when supported (Android Chrome, Desktop Chrome/Edge)
+  // Detect if running inside the installed Android APK (TWA) or standalone PWA
   React.useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia('(display-mode: minimal-ui)').matches ||
+      (window.navigator as any).standalone === true ||
+      document.referrer.startsWith('android-app://');
+    setIsStandaloneApp(standalone);
   }, []);
-
-  const handleInstallAppClick = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setDynamicAlert({
-          title: 'Installing DriveCost App 📲',
-          subtitle: 'Added to your device home screen / apps.',
-          icon: 'check',
-          color: '#10b981'
-        });
-      }
-      setDeferredPrompt(null);
-      return;
-    }
-    setShowInstallModal(true);
-  };
 
   // Close mobile drawer on route navigation
   React.useEffect(() => {
@@ -88,7 +70,9 @@ export function Navigation() {
 
   const secondaryLinks = [
     { label: 'Settings', href: '/settings', icon: Settings },
-    { label: 'Download the app', href: 'https://github.com/Mesoham/drivecost/releases/latest/download/DriveCost.apk', icon: Download, externalDownload: true },
+    ...(!isStandaloneApp
+      ? [{ label: 'Download the app', href: 'https://github.com/Mesoham/drivecost/releases/latest/download/DriveCost.apk', icon: Download, externalDownload: true }]
+      : []),
     { label: 'FAQ', href: '/faq', icon: HelpCircle },
     { label: 'Privacy Policy', href: '/privacy', icon: ShieldCheck },
     { label: 'Terms & Conditions', href: '/terms', icon: ShieldCheck },

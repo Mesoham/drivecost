@@ -15,16 +15,16 @@ export function Header() {
   const dueRemindersCount = reminders.filter(r => r.status === 'due_soon' || r.status === 'overdue').length;
 
   return (
-    <header className="sticky top-0 z-30 apple-dock rounded-none border-x-0 border-t-0 border-b border-black/5 dark:border-white/10 px-4 py-3 md:px-8">
-      <div className="flex items-center justify-between gap-4 max-w-7xl mx-auto">
+    <header className="sticky top-0 z-30 apple-dock rounded-none border-x-0 border-t-0 border-b border-black/5 dark:border-white/10 pl-14 pr-3 py-2.5 md:px-8 md:py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4 max-w-7xl mx-auto">
         {/* Left: Mobile App Brand / Title */}
-        <div className="flex items-center gap-3 md:hidden">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-xl bg-slate-900 shadow-blue-500/30 flex items-center justify-center shadow-md border border-white/20 p-0.5 overflow-hidden">
+        <div className="flex items-center gap-2 md:hidden shrink-0">
+          <Link href="/dashboard" className="flex items-center gap-1.5">
+            <div className="h-7 w-7 rounded-xl bg-slate-900 shadow-blue-500/30 flex items-center justify-center shadow-md border border-white/20 p-0.5 overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/icon.svg" alt="DriveCost Logo" className="w-full h-full object-contain" />
             </div>
-            <span className="font-bold text-base tracking-tight daylight-text-main">
+            <span className="font-bold text-sm tracking-tight daylight-text-main">
               DriveCost
             </span>
           </Link>
