@@ -2,7 +2,17 @@
 
 > **“Know exactly what your vehicle costs every month.”**
 
+🌐 **Live App:** [drivecost.vercel.app](https://drivecost.vercel.app)
+
 A mobile-first, local-first Progressive Web App (PWA) built specifically for Indian vehicle owners: cars, motorcycles, scooters, auto-rickshaws, and small commercial vehicles. Tracks fuel refills, EV charging, servicing, insurance, PUC, EMI loans, tolls, parking, and overall running costs with Indian rupee formatting (₹ / Lakhs) and strict verified fuel-efficiency calculations.
+
+---
+
+## 📸 Screenshots
+
+| Home Page | Login | Dashboard |
+|:---------:|:-----:|:---------:|
+| ![Home Page](assets/screenshots/home_page.png) | ![Login](assets/screenshots/login_page.png) | ![Dashboard](assets/screenshots/dashboard_desktop.png) |
 
 ---
 
