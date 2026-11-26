@@ -17,19 +17,20 @@ export function Header() {
   return (
     <header className="sticky top-0 z-30 px-3 pt-2.5 pb-1.5 md:px-8 md:py-3 md:apple-dock md:rounded-none md:border-x-0 md:border-t-0 md:border-b md:border-black/5 md:dark:border-white/10">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4 max-w-7xl mx-auto">
-        {/* Row 1 on Mobile: Separate 3-bar on left + Logo & DriveCost name covering the entire rest of the row */}
+        {/* Row 1 on Mobile: Separate 3-bar on left + DriveCost animated brand logo covering the rest of the row */}
         <div className="flex items-center md:hidden pl-12">
           <Link
             href="/dashboard"
-            className="apple-dock rounded-2xl px-3.5 py-2 flex items-center gap-2.5 w-full shadow-sm border border-black/8 dark:border-white/12"
+            className="apple-dock rounded-2xl px-3 py-1.5 flex items-center w-full shadow-sm border border-black/8 dark:border-white/12"
           >
-            <div className="h-7 w-7 rounded-xl bg-slate-900 shadow-blue-500/30 flex items-center justify-center shadow-md border border-white/20 p-0.5 overflow-hidden shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icon.svg" alt="DriveCost Logo" className="w-full h-full object-contain" />
-            </div>
-            <span className="font-extrabold text-base tracking-tight daylight-text-main truncate">
-              DriveCost
-            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/drivecost-logo.svg"
+              alt="DriveCost"
+              width={360}
+              height={100}
+              className="h-8 w-auto aspect-[360/100] object-contain"
+            />
           </Link>
         </div>
 

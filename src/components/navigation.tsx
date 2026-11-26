@@ -253,20 +253,16 @@ export function Navigation() {
 
       {/* Desktop Left Sidebar: Apple HIG Frosted Liquid Glass */}
       <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-40 apple-glass rounded-none border-y-0 border-l-0 border-r border-black/8 dark:border-white/10 text-slate-800 dark:text-slate-100">
-        <div className="flex h-20 items-center justify-between px-6 border-b border-black/8 dark:border-white/8">
-          <Link href="/dashboard" className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-2xl overflow-hidden shadow-lg transition-transform hover:scale-105 border border-white/20 shadow-blue-500/20 bg-slate-900 flex items-center justify-center p-1">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icon.svg" alt="DriveCost Logo" className="w-full h-full object-contain" />
-            </div>
-            <div>
-              <span className="font-extrabold text-lg tracking-tight daylight-text-main block leading-none">
-                DriveCost
-              </span>
-              <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mt-1 tracking-tight">
-                Know what your vehicle really costs.
-              </span>
-            </div>
+        <div className="flex h-20 items-center justify-between px-5 border-b border-black/8 dark:border-white/8">
+          <Link href="/dashboard" className="flex items-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/drivecost-logo.svg"
+              alt="DriveCost"
+              width={360}
+              height={100}
+              className="h-10 w-auto aspect-[360/100] object-contain"
+            />
           </Link>
         </div>
 
@@ -299,20 +295,16 @@ export function Navigation() {
                 <Link 
                   href="/dashboard" 
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-2.5"
+                  className="flex items-center"
                 >
-                  <div className="h-9 w-9 rounded-2xl overflow-hidden border border-white/20 bg-slate-900 p-1 flex items-center justify-center shadow-md">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/icon.svg" alt="DriveCost Logo" className="w-full h-full object-contain" />
-                  </div>
-                  <div>
-                    <span className="font-black text-base tracking-tight text-white block leading-none">
-                      DriveCost
-                    </span>
-                    <span className="text-[9px] font-medium text-slate-400 block mt-0.5">
-                      Vehicle Cost Intelligence
-                    </span>
-                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/drivecost-logo.svg"
+                    alt="DriveCost"
+                    width={360}
+                    height={100}
+                    className="h-9 w-auto aspect-[360/100] object-contain"
+                  />
                 </Link>
 
                 <button
