@@ -130,10 +130,6 @@ export default function DashboardPage() {
               <span>Add Your First Vehicle</span>
             </Button>
           </Link>
-          <Button variant="outline" size="lg" onClick={() => loadDemoData()} className="w-full sm:w-auto">
-            <Sparkles className="h-4 w-4 mr-1.5 text-blue-500" />
-            <span>Load Demo Data</span>
-          </Button>
         </div>
       </div>
     );
@@ -141,21 +137,6 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Demo Mode Banner with 1-click return to Real Data */}
-      {settings?.isDemoMode && (
-        <div className="rounded-2xl border border-purple-500/30 bg-purple-500/10 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <Sparkles className="h-4 w-4 text-purple-500 shrink-0" />
-            <p className="text-xs font-semibold daylight-text-main">
-              Viewing <span className="text-purple-600 dark:text-purple-400 font-bold">Sample Data Mode</span> — your real vehicles and expenses are safely preserved.
-            </p>
-          </div>
-          <Button variant="primary" size="sm" onClick={() => exitDemoMode()} className="text-xs shrink-0">
-            Back to Real Data
-          </Button>
-        </div>
-      )}
-
       {/* Top Welcome */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

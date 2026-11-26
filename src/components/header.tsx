@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAppStore } from '@/store/app-store';
 import { maskRegistrationNumber } from '@/lib/calculations';
-import { Bell, Sparkles, RotateCcw } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 
 export function Header() {
@@ -14,14 +14,10 @@ export function Header() {
     vehicles,
     selectedVehicleId,
     setSelectedVehicleId,
-    reminders,
-    settings,
-    loadDemoData,
-    exitDemoMode
+    reminders
   } = useAppStore();
 
   const dueRemindersCount = reminders.filter(r => r.status === 'due_soon' || r.status === 'overdue').length;
-  const isDemoMode = Boolean(settings?.isDemoMode);
 
   return (
     <header className="sticky top-0 z-30 apple-dock rounded-none border-x-0 border-t-0 border-b border-black/5 dark:border-white/10 pl-14 pr-3 py-2 md:px-8 md:py-3">
@@ -49,31 +45,8 @@ export function Header() {
           </div>
         </div>
 
-        {/* Right side actions: Demo/Real Switch, Theme Toggle, Notification Bell */}
+        {/* Right side actions: Theme Toggle, Notification Bell */}
         <div className="flex items-center gap-2 shrink-0">
-          {isDemoMode ? (
-            <button
-              type="button"
-              onClick={() => exitDemoMode()}
-              className="h-9 px-3 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
-              title="Switch back to your real garage data"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Back to Real Data</span>
-              <span className="sm:hidden">Real Data</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => loadDemoData()}
-              className="h-9 px-3 rounded-2xl apple-glass text-xs font-semibold daylight-text-main hover:text-purple-600 dark:hover:text-purple-400 flex items-center gap-1.5 transition-colors cursor-pointer"
-              title="Preview dashboard with sample data"
-            >
-              <Sparkles className="h-3.5 w-3.5 text-purple-500" />
-              <span className="hidden sm:inline">Sample Data</span>
-            </button>
-          )}
-
           <ThemeToggle compact />
 
           <Link 

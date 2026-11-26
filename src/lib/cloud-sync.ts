@@ -4,6 +4,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
   setDoc,
   writeBatch,
 } from 'firebase/firestore';
@@ -89,6 +90,64 @@ export async function pullUserCloudData(uid: string): Promise<{
     console.warn('Cloud pull failed (falling back to local DB):', err);
     return null;
   }
+}
+
+export function subscribeToUserCloudData(
+  uid: string,
+  handlers: {
+    onVehicles: (vehicles: Vehicle[]) => void;
+    onExpenses: (expenses: Expense[]) => void;
+    onReminders: (reminders: Reminder[]) => void;
+    onDocuments: (documents: VehicleDocument[]) => void;
+    onSettings: (settings: Partial<UserSettings>) => void;
+  }
+): () => void {
+  if (!uid) return () => {};
+
+  const unsubs: Array<() => void> = [];
+
+  try {
+    unsubs.push(
+      onSnapshot(doc(firestore, 'users', uid), (snap) => {
+        if (snap.exists()) {
+          const s = snap.data()?.settings as Partial<UserSettings> | undefined;
+          if (s) handlers.onSettings(s);
+        }
+      }, (err) => console.warn('Settings snapshot error:', err))
+    );
+
+    unsubs.push(
+      onSnapshot(collection(firestore, 'users', uid, 'vehicles'), (snap) => {
+        handlers.onVehicles(snap.docs.map((d) => d.data() as Vehicle));
+      }, (err) => console.warn('Vehicles snapshot error:', err))
+    );
+
+    unsubs.push(
+      onSnapshot(collection(firestore, 'users', uid, 'expenses'), (snap) => {
+        handlers.onExpenses(snap.docs.map((d) => d.data() as Expense));
+      }, (err) => console.warn('Expenses snapshot error:', err))
+    );
+
+    unsubs.push(
+      onSnapshot(collection(firestore, 'users', uid, 'reminders'), (snap) => {
+        handlers.onReminders(snap.docs.map((d) => d.data() as Reminder));
+      }, (err) => console.warn('Reminders snapshot error:', err))
+    );
+
+    unsubs.push(
+      onSnapshot(collection(firestore, 'users', uid, 'documents'), (snap) => {
+        handlers.onDocuments(snap.docs.map((d) => d.data() as VehicleDocument));
+      }, (err) => console.warn('Documents snapshot error:', err))
+    );
+  } catch (err) {
+    console.warn('Cloud subscription failed:', err);
+  }
+
+  return () => {
+    unsubs.forEach((u) => {
+      try { u(); } catch {}
+    });
+  };
 }
 
 export async function wipeUserCloudData(uid: string): Promise<void> {

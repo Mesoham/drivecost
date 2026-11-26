@@ -123,23 +123,20 @@ export default function SettingsPage() {
         </div>
       </Card>
 
-      {/* SECTION 2: Clean Consolidated Email Notifications */}
+      {/* SECTION 2: Clean Consolidated Notifications */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5 text-purple-500" />
             <span>Notifications</span>
           </CardTitle>
-          <CardDescription>
-            Manage email notification alerts and reminder timeline in one place
-          </CardDescription>
         </CardHeader>
 
         <div className="space-y-4">
-          {/* Dropdown 1: Notification Channel (Email Only) */}
+          {/* Dropdown 1: Notification */}
           <div className="flex items-center justify-between gap-4 py-2 border-b border-black/5 dark:border-white/5">
             <div>
-              <div className="text-sm font-semibold daylight-text-main">Notification Type</div>
+              <div className="text-sm font-semibold daylight-text-main">Notification</div>
               <div className="text-xs daylight-text-muted">
                 Email alerts to{' '}
                 <span className="font-semibold daylight-text-main">
@@ -177,7 +174,7 @@ export default function SettingsPage() {
                   }
                 });
                 setDynamicAlert({
-                  title: mode === 'email' ? 'Email Notifications Enabled' : 'Notifications Turned Off',
+                  title: mode === 'email' ? 'Notifications Enabled' : 'Notifications Disabled',
                   subtitle: mode === 'email'
                     ? `Reminders configured for ${targetEmail || 'your account email'}.`
                     : 'All reminder alerts are muted.',
@@ -187,8 +184,8 @@ export default function SettingsPage() {
               }}
               className="text-xs font-semibold rounded-xl apple-glass px-3 py-2 daylight-text-main focus:outline-none cursor-pointer"
             >
-              <option value="email">Email Notifications</option>
-              <option value="off">Off (Disabled)</option>
+              <option value="email">Enabled</option>
+              <option value="off">Disabled</option>
             </select>
           </div>
 
@@ -297,58 +294,7 @@ export default function SettingsPage() {
         </div>
       </Card>
 
-      {/* SECTION 4: Reset & Demo Data */}
-      <Card className="border border-rose-500/20">
-        <CardHeader>
-          <CardTitle className="text-rose-500">Reset & Demo Data</CardTitle>
-          <CardDescription>Preview read-only sample data or delete your account</CardDescription>
-        </CardHeader>
-
-        <div className="space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="text-sm font-semibold daylight-text-main">
-                {settings?.isDemoMode ? 'Sample Data Mode (Active)' : 'Preview Sample Data'}
-              </div>
-              <div className="text-xs daylight-text-muted">
-                Switch between sample Activa &amp; Swift data and your real personal garage data without losing anything.
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Button
-                variant={settings?.isDemoMode ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => loadDemoData()}
-                className="text-xs gap-1.5"
-              >
-                <Sparkles className="h-4 w-4 text-purple-400" />
-                <span>Sample Data</span>
-              </Button>
-              <Button
-                variant={!settings?.isDemoMode ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => exitDemoMode()}
-                disabled={!settings?.isDemoMode}
-                className="text-xs gap-1.5"
-              >
-                <span>Back to Real Data</span>
-              </Button>
-            </div>
-          </div>
-
-          <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between gap-4">
-            <div>
-              <div className="text-sm font-semibold text-rose-500">Delete Your Account</div>
-              <div className="text-xs daylight-text-muted">Deletes all data and Pro payments, resetting you to a fresh free-tier account where Pro must be re-activated.</div>
-            </div>
-            <Button variant="danger" size="sm" onClick={() => setShowClearModal(true)} className="text-xs shrink-0">
-              Delete Your Account
-            </Button>
-          </div>
-        </div>
-      </Card>
-
-      {/* SECTION 5 (BOTTOM OF PAGE): Account & Log Out */}
+      {/* SECTION 4 (BOTTOM OF PAGE): Account & Log Out */}
       <Card className="border border-red-500/30 bg-red-500/5">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
@@ -383,6 +329,16 @@ export default function SettingsPage() {
             >
               <LogOut className="h-4 w-4" />
               <span>Log Out of DriveCost</span>
+            </Button>
+          </div>
+
+          <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between gap-4">
+            <div>
+              <div className="text-sm font-semibold text-rose-500">Delete Your Account</div>
+              <div className="text-xs daylight-text-muted">Deletes all data and Pro payments, resetting you to a fresh free-tier account where Pro must be re-activated.</div>
+            </div>
+            <Button variant="danger" size="sm" onClick={() => setShowClearModal(true)} className="text-xs shrink-0">
+              Delete Your Account
             </Button>
           </div>
         </div>

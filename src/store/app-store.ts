@@ -9,8 +9,73 @@ import {
   deleteDocFromCloud,
   syncSettingsToCloud,
   pullUserCloudData,
+  subscribeToUserCloudData,
   wipeUserCloudData
 } from '@/lib/cloud-sync';
+
+let activeCloudUnsubscribe: (() => void) | null = null;
+
+function stopCloudSync() {
+  if (activeCloudUnsubscribe) {
+    activeCloudUnsubscribe();
+    activeCloudUnsubscribe = null;
+  }
+}
+
+function startCloudSync(uid: string, set: any, get: any) {
+  stopCloudSync();
+  if (!uid) return;
+  activeCloudUnsubscribe = subscribeToUserCloudData(uid, {
+    onVehicles: async (cloudVehicles) => {
+      if (get().settings?.isDemoMode) return;
+      const db = getDb();
+      await db.vehicles.clear();
+      if (cloudVehicles.length > 0) await db.vehicles.bulkPut(cloudVehicles);
+      const activeVehicles = cloudVehicles.filter((v) => !v.archived);
+      set({ vehicles: activeVehicles });
+    },
+    onExpenses: async (cloudExpenses) => {
+      if (get().settings?.isDemoMode) return;
+      const db = getDb();
+      await db.expenses.clear();
+      if (cloudExpenses.length > 0) await db.expenses.bulkPut(cloudExpenses);
+      set({
+        expenses: [...cloudExpenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      });
+    },
+    onReminders: async (cloudReminders) => {
+      if (get().settings?.isDemoMode) return;
+      const db = getDb();
+      await db.reminders.clear();
+      if (cloudReminders.length > 0) await db.reminders.bulkPut(cloudReminders);
+      set({
+        reminders: [...cloudReminders].sort((a, b) => {
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        })
+      });
+    },
+    onDocuments: async (cloudDocuments) => {
+      if (get().settings?.isDemoMode) return;
+      const db = getDb();
+      await db.documents.clear();
+      if (cloudDocuments.length > 0) await db.documents.bulkPut(cloudDocuments);
+      set({
+        documents: [...cloudDocuments].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      });
+    },
+    onSettings: async (cloudSettings) => {
+      const current = get().settings || DEFAULT_SETTINGS;
+      const merged = await updateSettings({
+        ...current,
+        ...cloudSettings,
+        userAuth: cloudSettings.userAuth || current.userAuth
+      });
+      set({ settings: merged });
+    }
+  });
+}
 
 interface DynamicAlertPayload {
   title: string;
@@ -144,6 +209,11 @@ export const useAppStore = create<AppState>((set, get) => ({
         isLoading: false,
         isInitialized: true
       });
+
+      const uid = settings.userAuth?.uid || auth.currentUser?.uid || '';
+      if (uid) {
+        startCloudSync(uid, set, get);
+      }
     } catch (err) {
       console.error('Failed to initialize local database:', err);
       set({ isLoading: false, isInitialized: true });
@@ -235,10 +305,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       isInitialized: true
     });
 
+    if (uid) {
+      startCloudSync(uid, set, get);
+    }
+
     return { vehicles: activeVehicles };
   },
 
   logoutUser: async () => {
+    stopCloudSync();
     try {
       await signOut(auth);
     } catch (err) {

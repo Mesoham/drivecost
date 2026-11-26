@@ -138,12 +138,6 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleUseDemoData = async () => {
-    setIsSubmitting(true);
-    await loadDemoData();
-    router.push('/dashboard');
-  };
-
   return (
     <div className="min-h-screen flex flex-col justify-center items-center p-4 relative z-10 transition-colors duration-500">
       {/* Top Bar with Daylight/Darkside switcher */}
@@ -244,16 +238,6 @@ export default function OnboardingPage() {
                 </span>
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
-
-              <button
-                type="button"
-                onClick={handleUseDemoData}
-                disabled={isSubmitting}
-                className="w-full py-2.5 rounded-2xl apple-glass border border-dashed border-black/15 dark:border-white/20 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Sparkles className="h-4 w-4" />
-                <span>Skip and explore with sample data (Honda Activa + Maruti Swift)</span>
-              </button>
             </div>
           </div>
         )}
