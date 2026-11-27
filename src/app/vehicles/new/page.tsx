@@ -82,6 +82,10 @@ export default function NewVehiclePage() {
       setErrorMsg('Manufacturer and model are required.');
       return;
     }
+    if (currentOdometer === '' || isNaN(Number(currentOdometer)) || Number(currentOdometer) < 0) {
+      setErrorMsg('Current odometer reading is required.');
+      return;
+    }
 
     const regValidation = validateIndianRegistration(registrationNumber);
     if (!regValidation.valid && regValidation.error) {

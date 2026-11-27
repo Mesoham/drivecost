@@ -111,7 +111,7 @@ export default function OnboardingPage() {
 
   const handleFinishCustom = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!vehName.trim() || !manufacturer.trim() || !model.trim()) return;
+    if (!vehName.trim() || !manufacturer.trim() || !model.trim() || odometer === '' || isNaN(Number(odometer)) || Number(odometer) < 0) return;
 
     setIsSubmitting(true);
     try {
@@ -338,10 +338,11 @@ export default function OnboardingPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider daylight-text-muted mb-1.5">
-                    Current Odometer (km)
+                    Current Odometer (km) *
                   </label>
                   <input
                     type="number"
+                    required
                     min="0"
                     placeholder="e.g. 8450"
                     value={odometer}

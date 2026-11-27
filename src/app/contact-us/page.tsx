@@ -27,16 +27,35 @@ export default function ContactUsPage() {
     message: ''
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
-    setDynamicAlert({
-      title: 'Message Sent! ✉️',
-      subtitle: 'Thank you for reaching out. We will get back to you within 24 hours.',
-      icon: 'check',
-      color: '#10b981'
-    });
+    setErrorMsg('');
+    setIsSending(true);
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || 'Could not send message. Please try again.');
+      }
+      setIsSubmitted(true);
+      setDynamicAlert({
+        title: 'Message Sent! ✉️',
+        subtitle: 'Thank you for reaching out. We will get back to you within 24 hours.',
+        icon: 'check',
+        color: '#10b981'
+      });
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Failed to send message.');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -152,6 +171,11 @@ export default function ContactUsPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-3.5">
+              {errorMsg && (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-500 font-medium">
+                  {errorMsg}
+                </div>
+              )}
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider daylight-text-muted mb-1">
                   Full Name *
@@ -210,10 +234,11 @@ export default function ContactUsPage() {
 
               <Button
                 type="submit"
+                disabled={isSending}
                 className="w-full py-3 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md cursor-pointer flex items-center justify-center gap-2"
               >
                 <Send className="h-4 w-4" />
-                <span>Submit Message</span>
+                <span>{isSending ? 'Sending Message...' : 'Submit Message'}</span>
               </Button>
             </form>
           )}

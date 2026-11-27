@@ -311,6 +311,7 @@ export default function ReportsPage() {
                 <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} interval={0} angle={-15} textAnchor="end" />
                 <YAxis stroke="#94a3b8" fontSize={11} tickFormatter={(v) => `₹${v}`} />
                 <Tooltip 
+                  cursor={false}
                   formatter={(val: any) => [formatINR(Number(val)), 'Total']}
                   contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '10px', color: '#fff', fontSize: '12px' }}
                 />
