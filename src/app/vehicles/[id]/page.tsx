@@ -65,7 +65,7 @@ export default function VehicleDetailPage() {
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!vehicle || !editName.trim() || !editManufacturer.trim() || !editModel.trim()) return;
+    if (!vehicle || !editName.trim() || !editManufacturer.trim() || !editModel.trim() || editOdometer === '' || isNaN(Number(editOdometer)) || Number(editOdometer) < 0) return;
     setIsSavingEdit(true);
     try {
       await updateVehicle(vehicle.id, {
@@ -288,10 +288,11 @@ export default function VehicleDetailPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider daylight-text-muted mb-1.5">
-                    Current Odometer (km)
+                    Current Odometer (km) *
                   </label>
                   <input
                     type="number"
+                    required
                     min="0"
                     value={editOdometer}
                     onChange={(e) => setEditOdometer(e.target.value)}
@@ -324,7 +325,7 @@ export default function VehicleDetailPage() {
                 <Button
                   type="submit"
                   size="sm"
-                  disabled={isSavingEdit || !editName.trim() || !editManufacturer.trim() || !editModel.trim()}
+                  disabled={isSavingEdit || !editName.trim() || !editManufacturer.trim() || !editModel.trim() || editOdometer === '' || isNaN(Number(editOdometer)) || Number(editOdometer) < 0}
                   className="text-white font-bold"
                   style={{ backgroundColor: editColor }}
                 >

@@ -70,17 +70,17 @@ export function ProUpgradeModal() {
           {/* Pro Pill */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide text-purple-300 bg-purple-500/20 border border-purple-400/30 mb-4">
             <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-            <span>DRIVECOST PRO</span>
+            <span>DRIVECOST PRO UPGRADE</span>
           </div>
 
           <h2 className="text-2xl font-black tracking-tight text-white mb-2">
-            Supercharge with DriveCost Pro
+            Upgrade to DriveCost Pro
           </h2>
           <p className="text-xs text-slate-300 mb-4 leading-relaxed">
-            Manage unlimited vehicles, backup documents, and unlock audit-ready tax reports.
+            Securely pay via Razorpay using UPI, Cards, NetBanking, or Wallets.
           </p>
 
-          {/* First-Time User Surprise / Activate Pro Mode Card */}
+          {/* First-Time Welcome Promo Card */}
           {isFirstTimeUser && (
             <div className="mb-5 p-3.5 rounded-2xl bg-gradient-to-r from-purple-500/15 via-blue-500/10 to-purple-500/15 border border-purple-400/30 transition-all">
               <div className="flex items-center justify-between gap-3">
@@ -90,10 +90,10 @@ export function ProUpgradeModal() {
                   </div>
                   <div>
                     <div className="font-bold text-xs text-white">
-                      DriveCost Pro Mode
+                      First-Time Welcome Promo
                     </div>
                     <div className="text-[11px] text-slate-300">
-                      {isOfferActivated ? '25% discount applied' : 'Special promo available'}
+                      {isOfferActivated ? '25% discount applied' : 'Unlock your surprise welcome discount'}
                     </div>
                   </div>
                 </div>
@@ -103,7 +103,7 @@ export function ProUpgradeModal() {
                     onClick={handleActivateOffer}
                     className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-black text-xs shadow-md cursor-pointer shrink-0 transition-transform hover:scale-105 active:scale-95"
                   >
-                    Activate Pro mode 🎁
+                    Reveal Offer 🎁
                   </button>
                 ) : (
                   <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 text-xs font-black">
@@ -185,7 +185,7 @@ export function ProUpgradeModal() {
               className="w-full py-4 text-sm font-extrabold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-indigo-500 shadow-xl shadow-blue-600/30 border border-white/20 cursor-pointer flex items-center justify-center gap-2"
             >
               <CreditCard className="h-4 w-4" />
-              <span>Proceed to Razorpay Checkout (₹{billingCycle === 'yearly' ? yearlyPrice : monthlyPrice})</span>
+              <span>Go Pro for ₹{billingCycle === 'yearly' ? yearlyPrice : monthlyPrice}</span>
             </Button>
             <div className="text-[11px] text-center text-slate-400 flex items-center justify-center gap-1.5">
               <Lock className="h-3 w-3 text-emerald-400" />
