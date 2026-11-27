@@ -257,6 +257,7 @@ export default function DashboardPage() {
                   tickFormatter={(v) => `₹${v}`} 
                 />
                 <Tooltip 
+                  cursor={false}
                   formatter={(value: any) => [formatINR(Number(value)), 'Total Expense']}
                   contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
                 />
